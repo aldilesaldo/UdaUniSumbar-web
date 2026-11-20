@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="810" viewBox="0 0 600 810" fill="none">
+  <defs>
+    <linearGradient id="cardBgUni" x1="300" y1="0" x2="300" y2="810" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f4f5f8"/>
+      <stop offset="65%" stop-color="#e5e8ef"/>
+      <stop offset="100%" stop-color="#d8dce6"/>
+    </linearGradient>
+    <radialGradient id="spotUni" cx="50%" cy="32%" r="48%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bustUni" x1="300" y1="104" x2="300" y2="620" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6b7280"/>
+      <stop offset="60%" stop-color="#8b92a0"/>
+      <stop offset="100%" stop-color="#b2b8c4" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="810" fill="url(#cardBgUni)"/>
+  <rect width="600" height="810" fill="url(#spotUni)"/>
+  <circle cx="300" cy="285" r="175" stroke="#ffffff" stroke-opacity="0.55" stroke-width="1.5"/>
+  <!-- Upper-body portrait silhouette (Uni) -->
+  <path d="M218 152 C238 118 268 104 300 104 C332 104 362 118 382 152 C389 164 382 180 364 185 C360 210 350 238 335 253 C324 264 313 269 300 269 C287 269 276 264 265 253 C250 238 240 210 236 185 C218 180 211 164 218 152 Z" fill="url(#bustUni)"/>
+  <path d="M270 259 L330 259 L337 296 C374 304 414 318 434 338 C454 358 464 396 470 456 L484 620 L116 620 L130 456 C136 396 146 358 166 338 C186 318 226 304 263 296 Z" fill="url(#bustUni)"/>
+</svg>

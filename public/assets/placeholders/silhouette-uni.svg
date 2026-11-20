@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="1138" viewBox="0 0 640 1138" fill="none">
+  <defs>
+    <linearGradient id="uniBody" x1="320" y1="112" x2="320" y2="1092" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#282930" stop-opacity="0.92"/>
+      <stop offset="48%" stop-color="#3e404a" stop-opacity="0.88"/>
+      <stop offset="85%" stop-color="#5a5d69" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#727582" stop-opacity="0.72"/>
+    </linearGradient>
+    <linearGradient id="uniRim" x1="200" y1="140" x2="440" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="softGlowUni" x="-10%" y="-4%" width="120%" height="108%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#14161a" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+  <g filter="url(#softGlowUni)">
+    <!-- Graceful Tikuluak/Suntiang Silhouette & Face -->
+    <path d="M254 152 C270 124 294 114 320 114 C346 114 370 124 386 152 C391 162 385 174 372 178 C369 198 361 224 349 237 C340 247 331 251 320 251 C309 251 300 247 291 237 C279 224 271 198 268 178 C255 174 249 162 254 152 Z" fill="url(#uniBody)"/>
+    <!-- Neck, Baju Kurung, Draped Arms, Songket Skirt & Shoes -->
+    <path d="M298 243 L342 243 L347 271 C372 276 398 286 412 298 C425 310 432 332 436 364 L446 492 C448 525 448 564 443 595 C440 611 433 622 424 624 C415 625 409 614 407 598 L402 522 L396 420 L391 504 C397 564 405 642 406 730 L402 1044 C403 1054 407 1068 411 1079 C413 1087 404 1091 384 1091 L344 1091 C336 1091 331 1085 330 1072 L328 1048 L312 1048 L310 1072 C309 1085 304 1091 296 1091 L256 1091 C236 1091 227 1087 229 1079 C233 1068 237 1054 238 1044 L234 730 C235 642 243 564 249 504 L244 420 L238 522 L233 598 C231 614 225 625 216 624 C207 622 200 611 197 595 C192 564 192 525 194 492 L204 364 C208 332 215 310 228 298 C242 286 268 276 293 271 Z" fill="url(#uniBody)"/>
+    <!-- Subtle Rim Light -->
+    <path d="M254 152 C270 124 294 114 320 114 C346 114 370 124 386 152 C370 132 346 125 320 125 C294 125 270 132 254 152 Z" fill="url(#uniRim)"/>
+    <path d="M228 298 C242 286 268 276 293 271 L296 276 C270 282 246 292 233 304 C221 316 214 337 210 368 L200 494 L194 492 L204 364 C208 332 215 310 228 298 Z" fill="url(#uniRim)"/>
+  </g>
+</svg>

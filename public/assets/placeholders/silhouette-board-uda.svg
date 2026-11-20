@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="810" viewBox="0 0 600 810" fill="none">
+  <defs>
+    <linearGradient id="cardBgUda" x1="300" y1="0" x2="300" y2="810" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f4f5f8"/>
+      <stop offset="65%" stop-color="#e5e8ef"/>
+      <stop offset="100%" stop-color="#d8dce6"/>
+    </linearGradient>
+    <radialGradient id="spotUda" cx="50%" cy="32%" r="48%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="bustUda" x1="300" y1="108" x2="300" y2="620" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#6b7280"/>
+      <stop offset="60%" stop-color="#8b92a0"/>
+      <stop offset="100%" stop-color="#b2b8c4" stop-opacity="0.3"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="810" fill="url(#cardBgUda)"/>
+  <rect width="600" height="810" fill="url(#spotUda)"/>
+  <circle cx="300" cy="285" r="175" stroke="#ffffff" stroke-opacity="0.55" stroke-width="1.5"/>
+  <!-- Upper-body portrait silhouette (Uda) -->
+  <path d="M244 134 C248 112 268 104 300 104 C332 104 352 112 356 134 L359 162 C363 170 364 182 360 194 C358 214 351 236 338 250 C327 262 315 268 300 268 C285 268 273 262 262 250 C249 236 242 214 240 194 C236 182 237 170 241 162 Z" fill="url(#bustUda)"/>
+  <path d="M266 258 L334 258 L341 294 C382 301 428 314 452 336 C474 356 484 394 490 456 L502 620 L98 620 L110 456 C116 394 126 356 148 336 C172 314 218 301 259 294 Z" fill="url(#bustUda)"/>
+</svg>

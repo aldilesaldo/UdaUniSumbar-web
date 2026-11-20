@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="1138" viewBox="0 0 640 1138" fill="none">
+  <defs>
+    <linearGradient id="udaBody" x1="320" y1="112" x2="320" y2="1092" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#22242a" stop-opacity="0.92"/>
+      <stop offset="48%" stop-color="#363942" stop-opacity="0.88"/>
+      <stop offset="85%" stop-color="#525663" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#696e7c" stop-opacity="0.72"/>
+    </linearGradient>
+    <linearGradient id="udaRim" x1="180" y1="140" x2="460" y2="900" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="softGlow" x="-10%" y="-4%" width="120%" height="108%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#14161a" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+  <g filter="url(#softGlow)">
+    <!-- Head & Songkok contour -->
+    <path d="M276 140 C278 121 294 114 320 114 C346 114 362 121 364 140 L366 164 C369 170 370 179 367 190 C366 206 361 224 351 236 C342 246 332 251 320 251 C308 251 298 246 289 236 C279 224 274 206 273 190 C270 179 271 170 274 164 Z" fill="url(#udaBody)"/>
+    <!-- Neck, Shoulders, Coat, Arms & Trousers -->
+    <path d="M294 242 L346 242 L352 269 C378 274 410 282 426 294 C441 305 448 326 452 356 L466 492 C469 528 470 568 466 602 C464 618 456 631 446 634 C436 636 429 625 426 609 L420 536 L414 422 L408 552 C412 586 414 618 412 642 L405 848 L400 1052 C408 1062 420 1072 422 1082 C423 1088 414 1091 395 1091 L356 1091 C348 1091 344 1085 344 1074 L339 866 L325 668 C323 655 317 655 315 668 L301 866 L296 1074 C296 1085 292 1091 284 1091 L245 1091 C226 1091 217 1088 218 1082 C220 1072 232 1062 240 1052 L235 848 L228 642 C226 618 228 586 232 552 L226 422 L220 536 L214 609 C211 625 204 636 194 634 C184 631 176 618 174 602 C170 568 171 528 174 492 L188 356 C192 326 199 305 214 294 C230 282 262 274 288 269 Z" fill="url(#udaBody)"/>
+    <!-- Subtle Inner Rim Light -->
+    <path d="M276 140 C278 121 294 114 320 114 C346 114 362 121 364 140 L366 164 C363 140 347 130 320 130 C293 130 279 140 274 164 Z" fill="url(#udaRim)"/>
+    <path d="M214 294 C230 282 262 274 288 269 L292 273 C265 279 235 288 220 301 C206 312 199 332 194 360 L180 495 L174 492 L188 356 C192 326 199 305 214 294 Z" fill="url(#udaRim)"/>
+  </g>
+</svg>

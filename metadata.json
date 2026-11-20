@@ -1,0 +1,6 @@
+{
+  "name": "Ikatan Uda & Uni Duta Wisata Provinsi Sumatera Barat",
+  "description": "Situs resmi Ikatan Uda dan Uni Duta Wisata Provinsi Sumatera Barat. Telusuri profil, biografi, utusan daerah, serta kegiatan dan arsip angkatan.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

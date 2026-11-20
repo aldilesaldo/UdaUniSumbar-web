@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="800" viewBox="0 0 720 800" fill="none">
+  <defs>
+    <linearGradient id="evBg" x1="360" y1="0" x2="360" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#2b2e35"/>
+      <stop offset="55%" stop-color="#1d1f24"/>
+      <stop offset="100%" stop-color="#121317"/>
+    </linearGradient>
+    <radialGradient id="evHalo" cx="50%" cy="38%" r="48%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.04"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="evSil" x1="360" y1="160" x2="360" y2="800" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#7c8290" stop-opacity="0.88"/>
+      <stop offset="55%" stop-color="#535864" stop-opacity="0.82"/>
+      <stop offset="100%" stop-color="#24272e" stop-opacity="0.95"/>
+    </linearGradient>
+  </defs>
+  <rect width="720" height="800" fill="url(#evBg)"/>
+  <rect width="720" height="800" fill="url(#evHalo)"/>
+  <circle cx="360" cy="360" r="220" stroke="#ffffff" stroke-opacity="0.08" stroke-width="1.5"/>
+  <!-- Left Uda Silhouette -->
+  <path d="M218 205 C221 187 238 180 264 180 C290 180 307 187 310 205 L312 228 C315 235 316 245 313 255 C311 271 305 289 294 301 C285 311 276 315 264 315 C252 315 243 311 234 301 C223 289 217 271 215 255 C212 245 213 235 216 228 Z" fill="url(#evSil)"/>
+  <path d="M236 307 L292 307 L298 336 C330 342 364 353 382 371 C398 387 406 418 411 468 L434 800 L94 800 L117 468 C122 418 130 387 146 371 C164 353 198 342 230 336 Z" fill="url(#evSil)"/>
+  <!-- Right Uni Silhouette -->
+  <path d="M388 220 C404 192 428 180 454 180 C480 180 504 192 520 220 C526 230 520 243 506 247 C502 268 494 291 482 303 C473 312 464 316 454 316 C444 316 435 312 426 303 C414 291 406 268 402 247 C388 243 382 230 388 220 Z" fill="url(#evSil)"/>
+  <path d="M430 308 L478 308 L484 338 C514 345 546 356 562 373 C578 389 586 420 591 468 L612 800 L296 800 L317 468 C322 420 330 389 346 373 C362 356 394 345 424 338 Z" fill="url(#evSil)"/>
+</svg>
