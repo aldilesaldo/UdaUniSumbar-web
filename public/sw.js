@@ -1,5 +1,5 @@
 // @ts-nocheck
-const MEDIA_CACHE_NAME = 'uda-uni-media-cache-v2';
+const MEDIA_CACHE_NAME = 'uda-uni-media-cache-v3';
 const CACHEABLE_PREFIXES = [
   '/assets/uda-uni-2024/',
   '/assets/uda-uni-2022/',

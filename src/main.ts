@@ -1,18 +1,27 @@
 import {
   AmbassadorBio,
   CohortPhoto,
+  PublicRegistrationStatusView,
+  RegistrationStatus,
   RoleFilter,
   SUMBAR_REGIONS,
   UDA_PHOTOS,
   UNI_PHOTOS,
   YearLineup,
+  formatBytesCompact,
   getCmsState,
   getPublishedBoardMembers,
   getPublishedCatalogYears,
   getPublishedEvents,
   hydrateCmsMediaUrls,
+  lookupRegistrationStatus,
   resolveCmsImageUrl,
+  saveCompressedAdminImage,
+  saveRegistrationDocument,
+  submitRegistration2027,
   subscribeCmsChange,
+  toTitleCaseLive,
+  toTitleCaseWords,
 } from './cmsStore';
 import {setupAdminPanel} from './adminPanel';
 
@@ -44,7 +53,7 @@ interface RingBodyState {
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
-const MEDIA_CACHE_NAME = 'uda-uni-media-cache-v1';
+const MEDIA_CACHE_NAME = 'uda-uni-media-cache-v3';
 const FOOT_CACHE_STORAGE_KEY = 'uda-uni:foot-offsets:v1';
 
 const decodedImageUrls = new Set<string>();
@@ -289,6 +298,17 @@ function decodeModelImage(img: HTMLImageElement, targetKey?: string): void {
     if (targetKey) decodedImageUrls.add(targetKey);
     img.classList.add('is-decoded');
   };
+  const handleError = () => {
+    const rawSrc = img.dataset.rawSrc;
+    if (rawSrc && img.src !== rawSrc && !img.dataset.rawFallbackTried) {
+      img.dataset.rawFallbackTried = '1';
+      img.removeAttribute('srcset');
+      img.src = rawSrc;
+      img.addEventListener('load', show, {once: true});
+      return;
+    }
+    show();
+  };
   if (img.complete && img.naturalWidth > 0) {
     show();
     return;
@@ -302,10 +322,12 @@ function decodeModelImage(img: HTMLImageElement, targetKey?: string): void {
           show();
         } else {
           img.addEventListener('load', show, {once: true});
+          img.addEventListener('error', handleError, {once: true});
         }
       });
   } else {
     img.addEventListener('load', show, {once: true});
+    img.addEventListener('error', handleError, {once: true});
   }
 }
 
@@ -370,6 +392,7 @@ class RunwaySection extends HTMLElement {
 
   private rafId = 0;
   private measureRaf = 0;
+  private roleSwitchRaf = 0;
   private lastTs = 0;
   private lastFrameH = -1;
   private lastModelH = -1;
@@ -490,6 +513,7 @@ class RunwaySection extends HTMLElement {
     if (this.rafId) cancelAnimationFrame(this.rafId);
     if (this.cursorRaf) cancelAnimationFrame(this.cursorRaf);
     if (this.measureRaf) cancelAnimationFrame(this.measureRaf);
+    if (this.roleSwitchRaf) cancelAnimationFrame(this.roleSwitchRaf);
     window.clearTimeout(this.autoTimer);
     window.clearTimeout(this.resizeTimer);
     window.clearTimeout(this.wheelLock);
@@ -544,7 +568,8 @@ class RunwaySection extends HTMLElement {
       for (let i = 0; i < this.LOOK_COUNT; i++) {
         const person = list[i];
         const photo = person?.photo ?? basePhotos[i % basePhotos.length];
-        const altText = person ? `${person.shortName} (${person.region}) - ${lineup.year}` : `Peserta ${i + 1}`;
+        const displayName = person ? person.fullName || person.shortName : '';
+        const altText = person ? `${displayName} (${person.region}) - ${lineup.year}` : `Peserta ${i + 1}`;
         const model = document.createElement('div');
         model.className = 'rw__model';
         model.setAttribute('data-rw-model', '');
@@ -560,7 +585,7 @@ class RunwaySection extends HTMLElement {
           <span class="rw__shadow" aria-hidden="true"></span>
           <div class="rw__figure" style="--rw-ar:0.5625">
             <div class="rw__art">
-              <img src="${resolvedThumb}"${srcsetAttr} sizes="(min-width: 1800px) 540px, (min-width: 750px) 420px, 320px" loading="${i <= 2 || i >= this.LOOK_COUNT - 2 ? 'eager' : 'lazy'}" decoding="async" width="1100" height="1956" draggable="false" data-model-image alt="${altText}">
+              <img src="${resolvedThumb}" data-raw-src="${photo.thumb}"${srcsetAttr} sizes="(min-width: 1800px) 540px, (min-width: 750px) 420px, 320px" loading="${i <= 2 || i >= this.LOOK_COUNT - 2 ? 'eager' : 'lazy'}" decoding="async" width="1100" height="1956" draggable="false" data-model-image alt="${altText}">
               <button type="button" class="rw__hit" data-rw-go="${i}" aria-label="${altText}" tabindex="-1"></button>
             </div>
           </div>
@@ -574,7 +599,8 @@ class RunwaySection extends HTMLElement {
       for (let i = 0; i < this.LOOK_COUNT; i++) {
         const person = list[i];
         const photo = person?.photo ?? basePhotos[i % basePhotos.length];
-        const altText = person ? `${person.shortName} (${person.region}) - ${lineup.year}` : `Peserta ${i + 1}`;
+        const displayName = person ? person.fullName || person.shortName : '';
+        const altText = person ? `${displayName} (${person.region}) - ${lineup.year}` : `Peserta ${i + 1}`;
         const hero = document.createElement('div');
         hero.className = i === 0 ? 'rw__hero is-on' : 'rw__hero';
         hero.setAttribute('data-rw-hero', '');
@@ -594,7 +620,7 @@ class RunwaySection extends HTMLElement {
             <span class="rw__shadow" aria-hidden="true"></span>
             <div class="rw__figure" style="--rw-ar:0.5625">
               <div class="rw__art">
-                <img src="${resolvedThumb}"${srcsetAttr} sizes="(min-width: 1800px) 540px, (min-width: 750px) 420px, 320px" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async" width="1100" height="1956" draggable="false" data-model-image alt="${altText}">
+                <img src="${resolvedThumb}" data-raw-src="${photo.thumb}"${srcsetAttr} sizes="(min-width: 1800px) 540px, (min-width: 750px) 420px, 320px" loading="${i === 0 ? 'eager' : 'lazy'}" decoding="async" width="1100" height="1956" draggable="false" data-model-image alt="${altText}">
                 <button type="button" class="rw__zoom" data-rw-zoom aria-label="Lihat profil: ${altText}" tabindex="${i === 0 ? '0' : '-1'}"></button>
               </div>
             </div>
@@ -610,7 +636,8 @@ class RunwaySection extends HTMLElement {
       for (let i = 0; i < this.LOOK_COUNT; i++) {
         const person = list[i];
         const num = String(i + 1).padStart(2, '0');
-        const labelText = person ? `${person.shortName} · ${person.region}` : `Slot ${num}`;
+        const displayName = person ? person.fullName || person.shortName : '';
+        const labelText = person ? `${displayName} · ${person.region}` : `Slot ${num}`;
         const tick = document.createElement('button');
         tick.type = 'button';
         tick.className = 'rw__tick';
@@ -805,7 +832,7 @@ class RunwaySection extends HTMLElement {
       mhead.className = 'rw__mhead';
       const mTitle = document.createElement('span');
       mTitle.className = 'rw__mhead-title';
-      mTitle.textContent = `${person.shortName} - ${lineup.year}`;
+      mTitle.textContent = `${person.fullName || person.shortName} - ${lineup.year}`;
 
       const mLabel = document.createElement('span');
       mLabel.className = 'rw__label';
@@ -885,7 +912,8 @@ class RunwaySection extends HTMLElement {
     this.ticks.forEach((tick, idx) => {
       const person = list[idx];
       if (!person) return;
-      const labelText = `${person.shortName} · ${person.region}`;
+      const displayName = person.fullName || person.shortName;
+      const labelText = `${displayName} · ${person.region}`;
       tick.querySelectorAll('.rw__tick-name').forEach((nameSpan) => {
         nameSpan.innerHTML = `&nbsp;&nbsp;${labelText}`;
       });
@@ -897,7 +925,8 @@ class RunwaySection extends HTMLElement {
     this.heroes.forEach((hero, idx) => {
       const person = list[idx];
       if (!person) return;
-      const labelText = `${person.shortName} (${person.region}) - ${lineup.year}`;
+      const displayName = person.fullName || person.shortName;
+      const labelText = `${displayName} (${person.region}) - ${lineup.year}`;
       hero.dataset.name = labelText;
       hero.dataset.label = `${person.rankLabel} ${lineup.year}: ${labelText}`;
     });
@@ -943,7 +972,7 @@ class RunwaySection extends HTMLElement {
       year: lineup.year,
       index: this.index + 1,
       total: this.LOOK_COUNT,
-      shortName: person?.shortName ?? '',
+      shortName: person?.fullName || person?.shortName || '',
       region: person?.region ?? '',
       playing: this.playing,
       zoomed: this.zoomed,
@@ -1086,7 +1115,8 @@ class RunwaySection extends HTMLElement {
       const person = list[idx];
       if (!person) continue;
       const photo = this.getSlotPhoto(lineup.year, this.roleFilter, idx, person);
-      const altText = `${person.shortName} (${person.region}) - ${lineup.year}`;
+      const displayName = person.fullName || person.shortName;
+      const altText = `${displayName} (${person.region}) - ${lineup.year}`;
       const hasDistinctFull = Boolean(photo.full && photo.full !== photo.thumb);
       const thumbSrc = resolveCachedMediaUrl(photo.thumb);
       const fullSrc = hasDistinctFull ? resolveCachedMediaUrl(photo.full!) : '';
@@ -1163,7 +1193,7 @@ class RunwaySection extends HTMLElement {
       const photo = this.getSlotPhoto(lineup.year, this.roleFilter, this.index, person);
       const lbImg = this.lbStageEl.querySelector<HTMLImageElement>('.rw__lb-model [data-model-image]');
       if (person && lbImg) {
-        lbImg.alt = `${person.shortName} - ${lineup.year}`;
+        lbImg.alt = `${person.fullName || person.shortName} - ${lineup.year}`;
         const lbRaw = lbImg.dataset.rawSrc ?? lbImg.getAttribute('src');
         if (lbRaw !== photo.thumb) {
           lbImg.dataset.rawSrc = photo.thumb;
@@ -1314,62 +1344,126 @@ class RunwaySection extends HTMLElement {
     this.rebuildStageSlots(false);
   }
 
-  public setYear(year: string, resetSlot = true): void {
+  public setYear(year: string, resetSlot = true, immediate = false): void {
     if (!getCatalogLineups().some((y) => y.year === year)) return;
     const changed = this.activeYear !== year;
     this.activeYear = year;
 
     if (changed) {
       const slotsChanged = this.syncSlotCount();
-      if (slotsChanged) {
-        this.rebuildStageSlots(resetSlot);
-      } else {
-        this.renderAllPanels();
-        this.syncRoleLabels();
-        this.syncStageGroupMedia();
-        this.setupImagesAndFeet();
-        this.scheduleOppositeRolePreload();
-        if (resetSlot && this.index !== 0) {
-          this.go(0);
+      // Update pill buttons & trigger sliding thumb immediately at frame 0 (matching top-nav smoothness)
+      this.yearButtons.forEach((btn) => {
+        const active = (btn.dataset.rwYear || '') === this.activeYear;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      this.emitStateChange();
+
+      const applyYearWork = () => {
+        if (slotsChanged) {
+          this.rebuildStageSlots(resetSlot);
+        } else {
+          this.renderAllPanels();
+          this.syncRoleLabels();
+          this.syncStageGroupMedia();
+          this.setupImagesAndFeet();
+          this.scheduleOppositeRolePreload();
+          if (resetSlot && this.index !== 0) {
+            this.go(0);
+          }
         }
+        this.stage?.classList.remove('is-switching');
+        if (!this.reducedMotion && !this.zoomed) {
+          this.stage.classList.remove('is-sweep');
+          void this.stage.offsetWidth;
+          this.stage.classList.add('is-sweep');
+        }
+      };
+
+      if (this.roleSwitchRaf) {
+        cancelAnimationFrame(this.roleSwitchRaf);
+        this.roleSwitchRaf = 0;
       }
-      if (!this.reducedMotion && !this.zoomed) {
-        this.stage.classList.remove('is-sweep');
-        void this.stage.offsetWidth;
-        this.stage.classList.add('is-sweep');
+
+      if (immediate) {
+        applyYearWork();
+        return;
       }
+
+      if (!this.reducedMotion) {
+        this.stage?.classList.add('is-switching');
+      }
+      this.roleSwitchRaf = requestAnimationFrame(() => {
+        this.roleSwitchRaf = 0;
+        applyYearWork();
+      });
     }
   }
 
-  public setRoleFilter(role: RoleFilter): void {
+  public setRoleFilter(role: RoleFilter, immediate = false): void {
     const changed = this.roleFilter !== role || this.activePanelRole !== role;
     this.roleFilter = role;
     this.activePanelRole = role;
 
     if (changed) {
-      if (this.syncSlotCount()) {
-        this.rebuildStageSlots(false);
-      } else {
-        this.renderAllPanels();
-        this.syncRoleLabels();
-        this.syncStageGroupMedia();
-        this.setupImagesAndFeet();
-        this.scheduleOppositeRolePreload();
+      const roleSwitchEl = this.querySelector<HTMLElement>('.rw__role-switch');
+      if (roleSwitchEl) {
+        roleSwitchEl.dataset.activeRole = this.roleFilter;
       }
-      if (!this.reducedMotion && !this.zoomed) {
-        this.stage.classList.remove('is-sweep');
-        void this.stage.offsetWidth;
-        this.stage.classList.add('is-sweep');
-      }
-    }
+      this.roleButtons.forEach((btn) => {
+        const active = (btn.dataset.rwRole as RoleFilter) === this.roleFilter;
+        btn.classList.toggle('is-active', active);
+        btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      });
+      this.emitStateChange();
 
-    if (this.panelOpen) {
-      const activePanel = this.panels[this.index];
-      if (activePanel && changed) {
-        activePanel.classList.remove('is-in');
-        void activePanel.offsetWidth;
-        activePanel.classList.add('is-in');
+      const slotsChanged = this.syncSlotCount();
+      const applyRoleWork = () => {
+        if (slotsChanged) {
+          this.rebuildStageSlots(false);
+        } else {
+          this.renderAllPanels();
+          this.syncRoleLabels();
+          this.syncStageGroupMedia();
+          this.setupImagesAndFeet();
+          this.scheduleOppositeRolePreload();
+        }
+        this.stage?.classList.remove('is-switching');
+        if (!this.reducedMotion && !this.zoomed) {
+          this.stage.classList.remove('is-sweep');
+          void this.stage.offsetWidth;
+          this.stage.classList.add('is-sweep');
+        }
+
+        if (this.panelOpen) {
+          const activePanel = this.panels[this.index];
+          if (activePanel) {
+            activePanel.classList.remove('is-in');
+            void activePanel.offsetWidth;
+            activePanel.classList.add('is-in');
+          }
+          this.hot(this.activePanelRole === 'uda' ? 1 : 2, false);
+        }
+      };
+
+      if (this.roleSwitchRaf) {
+        cancelAnimationFrame(this.roleSwitchRaf);
+        this.roleSwitchRaf = 0;
       }
+
+      if (immediate) {
+        applyRoleWork();
+        return;
+      }
+
+      if (!this.reducedMotion) {
+        this.stage?.classList.add('is-switching');
+      }
+      this.roleSwitchRaf = requestAnimationFrame(() => {
+        this.roleSwitchRaf = 0;
+        applyRoleWork();
+      });
+    } else if (this.panelOpen) {
       this.hot(this.activePanelRole === 'uda' ? 1 : 2, false);
     }
   }
@@ -1377,9 +1471,9 @@ class RunwaySection extends HTMLElement {
   public goToProfile(slotIdx: number, role: RoleFilter = 'uda', year?: string): void {
     this.engage();
     if (year && year !== this.activeYear) {
-      this.setYear(year, false);
+      this.setYear(year, false, true);
     }
-    this.setRoleFilter(role);
+    this.setRoleFilter(role, true);
     this.go(slotIdx);
     this.focusParticipant(role);
     window.setTimeout(() => this.hot(role === 'uda' ? 1 : 2, true), 60);
@@ -2864,6 +2958,9 @@ function initSlidingPill(
   if (!thumb) return null;
 
   let initialized = false;
+  let animatingUntil = 0;
+  let lastViewportWidth = window.innerWidth;
+
   const update = (instant = false) => {
     const activeEl = container.querySelector<HTMLElement>(activeSelector);
     if (!activeEl) return;
@@ -2871,6 +2968,9 @@ function initSlidingPill(
     const shouldSnap = instant || !initialized;
     if (shouldSnap) {
       container.classList.add('is-snapping');
+    } else {
+      container.classList.remove('is-snapping');
+      animatingUntil = performance.now() + 460;
     }
 
     const x = activeEl.offsetLeft;
@@ -2896,10 +2996,22 @@ function initSlidingPill(
   requestAnimationFrame(() => update(true));
 
   if ('ResizeObserver' in window) {
-    const ro = new ResizeObserver(() => update(true));
+    const ro = new ResizeObserver(() => {
+      if (!initialized) {
+        update(true);
+        return;
+      }
+      const isAnimating = performance.now() < animatingUntil;
+      const viewportChanged = window.innerWidth !== lastViewportWidth;
+      lastViewportWidth = window.innerWidth;
+      update(viewportChanged && !isAnimating);
+    });
     ro.observe(container);
   }
-  window.addEventListener('resize', () => update(true));
+  window.addEventListener('resize', () => {
+    lastViewportWidth = window.innerWidth;
+    update(performance.now() >= animatingUntil);
+  });
 
   return {update};
 }
@@ -2938,6 +3050,7 @@ function setupTopNavAndPills(): void {
   const navBtns = Array.from(topNavEl?.querySelectorAll<HTMLButtonElement>('.top-nav-btn') ?? []);
   const eventDialog = document.getElementById('kegiatan-dialog') as HTMLDialogElement | null;
   const visiMisiDialog = document.getElementById('visi-misi-dialog') as HTMLDialogElement | null;
+  const regDialog = document.getElementById('pendaftaran-dialog') as HTMLDialogElement | null;
 
   const syncControlPills = () => {
     yearPillCtrl?.update(false);
@@ -2995,7 +3108,7 @@ function setupTopNavAndPills(): void {
   let scrollTick = 0;
   const updateActiveByScroll = () => {
     scrollTick = 0;
-    if (eventDialog?.open || visiMisiDialog?.open) return;
+    if (eventDialog?.open || visiMisiDialog?.open || regDialog?.open) return;
     if (document.body.classList.contains('is-profile-focus')) {
       setActiveNavTarget('#galeri');
       return;
@@ -3014,6 +3127,7 @@ function setupTopNavAndPills(): void {
 
   eventDialog?.addEventListener('close', updateActiveByScroll);
   visiMisiDialog?.addEventListener('close', updateActiveByScroll);
+  regDialog?.addEventListener('close', updateActiveByScroll);
 
   window.addEventListener(
     'scroll',
@@ -4111,16 +4225,9 @@ function setupEventShowcase(): void {
   const ctrl = new AbortController();
   const {signal} = ctrl;
   let observer: IntersectionObserver | null = null;
+  let resizeObserver: ResizeObserver | null = null;
   let wheelLock = 0;
-
-  showcaseTeardown = () => {
-    ctrl.abort();
-    observer?.disconnect();
-    if (wheelLock) {
-      window.clearTimeout(wheelLock);
-      wheelLock = 0;
-    }
-  };
+  let rafId = 0;
 
   const cards = Array.from(stage.querySelectorAll<HTMLElement>('[data-showcase-card]'));
   const dots = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-showcase-dot]'));
@@ -4129,23 +4236,65 @@ function setupEventShowcase(): void {
   const total = cards.length;
   if (total === 0) return;
 
+  stage.classList.add('is-spring');
+
   cards.forEach((card) => {
     card.querySelectorAll<HTMLElement>('.showcase-metric strong').forEach(prepareCountTarget);
   });
 
   const section = stage.closest<HTMLElement>('#event');
+  const mqlMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reducedMotion = mqlMotion.matches;
+  const onMotionChange = (e: MediaQueryListEvent) => {
+    reducedMotion = e.matches;
+    if (reducedMotion) {
+      cur = target;
+      vel = 0;
+      renderFrame(cur);
+    }
+  };
+  mqlMotion.addEventListener('change', onMotionChange);
+
+  // Critically-damped spring physics matching Hero RunwaySection (K=95, C=2*sqrt(95))
+  const K = 95;
+  const C = 2 * Math.sqrt(K);
+
   let active = 0;
+  let target = 0;
+  let cur = 0;
+  let vel = 0;
+  let lastTs = 0;
+  let visible = true;
   let showcaseInView = false;
+
   let dragPointerId: number | null = null;
   let dragStartX = 0;
   let dragStartY = 0;
+  let dragStartTarget = 0;
   let dragActive = false;
   let dragAbandoned = false;
   let dragUnit = 320;
-  let currentProgress = 0;
   let dragSamples: Array<{x: number; time: number}> = [];
   let suppressClickUntil = 0;
   let wheelAcc = 0;
+  const lastBlurs = cards.map(() => '');
+
+  const normIdx = (n: number) => ((Math.round(n) % total) + total) % total;
+
+  const syncMobileHeight = () => {
+    if (window.innerWidth <= 749) {
+      let maxH = 0;
+      cards.forEach((card) => {
+        const h = card.offsetHeight;
+        if (h > maxH) maxH = h;
+      });
+      if (maxH > 0) {
+        stage.style.setProperty('--showcase-h', `${Math.ceil(maxH)}px`);
+      }
+    } else {
+      stage.style.removeProperty('--showcase-h');
+    }
+  };
 
   const animateActiveMetrics = () => {
     const activeCard = cards[active];
@@ -4154,7 +4303,7 @@ function setupEventShowcase(): void {
     animateCountUp(nums);
   };
 
-  const render = () => {
+  const syncAriaAndDots = () => {
     cards.forEach((card, index) => {
       const diff = (index - active + total) % total;
       let pos: 'active' | 'next' | 'prev' | 'hidden' = 'hidden';
@@ -4173,29 +4322,18 @@ function setupEventShowcase(): void {
     });
   };
 
-  const clearDragStyles = () => {
-    cards.forEach((card) => {
-      card.style.transform = '';
-      card.style.opacity = '';
-      card.style.filter = '';
-      card.style.zIndex = '';
-    });
-  };
-
-  const applyDragFrame = (progress: number) => {
+  const renderFrame = (pos: number) => {
     const isMobile = window.innerWidth <= 749;
-    const sideOpacity = isMobile ? 0 : 0.82;
+    const sideOpacity = isMobile ? 0.12 : 0.84;
+    const visualStep = (44 * Math.PI) / 180;
 
-    cards.forEach((card, index) => {
-      let rel = (index - active) % total;
-      if (rel > total / 2) rel -= total;
-      if (rel < -total / 2) rel += total;
-      if (total % 2 === 0 && rel === total / 2 && progress < 0) {
-        rel = -total / 2;
-      }
+    for (let i = 0; i < total; i++) {
+      const card = cards[i];
+      let delta = (i - pos) % total;
+      while (delta <= -total / 2) delta += total;
+      while (delta > total / 2) delta -= total;
 
-      const d = clamp(rel - progress, -2, 2);
-      const a = Math.abs(d);
+      const absD = Math.abs(delta);
 
       let xPct: number;
       let zPx: number;
@@ -4203,43 +4341,137 @@ function setupEventShowcase(): void {
       let opacity: number;
       let blur: number;
 
-      if (a <= 1) {
-        xPct = -50 + d * 44;
-        zPx = -140 * a;
-        scale = 1 - 0.16 * a;
-        opacity = 1 - (1 - sideOpacity) * a;
-        blur = 0.6 * a;
+      if (isMobile) {
+        xPct = -50 + delta * 104;
+        zPx = -80 * Math.min(absD, 1.5);
+        scale = 1 - 0.08 * Math.min(absD, 1.5);
+        opacity = absD <= 1 ? 1 - (1 - sideOpacity) * absD : Math.max(0, sideOpacity * (1.35 - absD) / 0.35);
+        blur = 0;
       } else {
-        const t = a - 1;
-        const edgeX = d < 0 ? -94 : -6;
-        xPct = edgeX + (-50 - edgeX) * t;
-        zPx = -140 - 120 * t;
-        scale = 0.84 - 0.16 * t;
-        opacity = sideOpacity * (1 - t);
-        blur = 0.6 + 0.6 * t;
+        const clampedD = clamp(delta, -2.15, 2.15);
+        const phi = clampedD * visualStep;
+        const sinP = Math.sin(phi);
+        const cosP = Math.cos(phi);
+        const depth = 1 - cosP;
+
+        if (absD <= 1) {
+          xPct = -50 + sinP * 63.3;
+          zPx = -140 * absD;
+          scale = 1 - 0.16 * absD;
+          opacity = 1 - (1 - sideOpacity) * absD;
+          blur = 0.65 * absD;
+        } else if (absD < 2.15) {
+          const t = clamp((absD - 1) / 1.15, 0, 1);
+          const edgeX = delta < 0 ? -94 : -6;
+          xPct = edgeX + (-50 - edgeX) * (t * 0.72);
+          zPx = -140 - 130 * (depth * 0.65 + t * 0.55);
+          scale = 0.84 - 0.17 * t;
+          opacity = sideOpacity * (1 - t);
+          blur = 0.65 + 0.95 * t;
+        } else {
+          xPct = -50;
+          zPx = -280;
+          scale = 0.66;
+          opacity = 0;
+          blur = 1.6;
+        }
       }
 
+      const zIdx = Math.max(1, Math.round(100 - absD * 30));
       card.style.transform = `translate3d(${xPct.toFixed(2)}%, 0, ${zPx.toFixed(1)}px) scale(${scale.toFixed(4)})`;
       card.style.opacity = opacity.toFixed(3);
-      card.style.filter = blur > 0.02 ? `blur(${blur.toFixed(2)}px)` : 'none';
-      card.style.zIndex = a < 0.5 ? '4' : a < 1.35 ? '2' : '1';
-    });
+      card.style.zIndex = String(zIdx);
+      card.style.visibility = opacity < 0.01 ? 'hidden' : 'visible';
+      card.style.pointerEvents = opacity < 0.18 ? 'none' : 'auto';
+
+      const blurStr = blur > 0.04 ? `blur(${blur.toFixed(2)}px)` : '';
+      if (lastBlurs[i] !== blurStr) {
+        card.style.filter = blurStr;
+        lastBlurs[i] = blurStr;
+      }
+    }
   };
 
-  const go = (nextIndex: number, forceReplay = false) => {
-    const resolved = ((nextIndex % total) + total) % total;
+  const step = (ts: number) => {
+    rafId = 0;
+    if (!visible || document.hidden) return;
+
+    const dt = lastTs ? Math.min(0.034, (ts - lastTs) / 1000) : 1 / 60;
+    lastTs = ts;
+
+    if (reducedMotion && !dragActive) {
+      cur = target;
+      vel = 0;
+      renderFrame(cur);
+      return;
+    }
+
+    const h = dt / 3;
+    for (let j = 0; j < 3; j++) {
+      const acc = -K * (cur - target) - C * vel;
+      vel += acc * h;
+      cur += vel * h;
+    }
+
+    if (!dragActive && Math.abs(cur - target) <= 0.0005 && Math.abs(vel) <= 0.0005) {
+      cur = target;
+      vel = 0;
+      renderFrame(cur);
+      return;
+    }
+
+    renderFrame(cur);
+    rafId = requestAnimationFrame(step);
+  };
+
+  const kick = () => {
+    if (rafId || !visible || document.hidden) return;
+    lastTs = 0;
+    rafId = requestAnimationFrame(step);
+  };
+
+  const moveTo = (nextTarget: number, forceReplay = false) => {
+    target = nextTarget;
+    const resolved = normIdx(target);
     const changed = resolved !== active;
     active = resolved;
-    render();
+    syncAriaAndDots();
     if (changed || forceReplay) {
       animateActiveMetrics();
     }
+    kick();
+  };
+
+  const go = (nextIndex: number, forceReplay = false) => {
+    const resolved = normIdx(nextIndex);
+    let d = (((resolved - active) % total) + total) % total;
+    if (d > total / 2) d -= total;
+    moveTo(Math.round(target) + d, forceReplay);
+  };
+
+  showcaseTeardown = () => {
+    ctrl.abort();
+    observer?.disconnect();
+    resizeObserver?.disconnect();
+    mqlMotion.removeEventListener('change', onMotionChange);
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
+    if (wheelLock) {
+      window.clearTimeout(wheelLock);
+      wheelLock = 0;
+    }
+    stage.classList.remove('is-spring', 'is-dragging');
+    stage.style.removeProperty('--showcase-h');
   };
 
   if ('IntersectionObserver' in window) {
     observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
+          visible = entry.isIntersecting;
+          if (visible) kick();
           if (entry.intersectionRatio >= 0.15) {
             if (!showcaseInView) {
               showcaseInView = true;
@@ -4258,6 +4490,35 @@ function setupEventShowcase(): void {
     animateActiveMetrics();
   }
 
+  if ('ResizeObserver' in window) {
+    resizeObserver = new ResizeObserver(() => {
+      syncMobileHeight();
+      renderFrame(cur);
+    });
+    resizeObserver.observe(stage);
+    cards.forEach((c) => resizeObserver?.observe(c));
+  }
+
+  window.addEventListener(
+    'resize',
+    () => {
+      syncMobileHeight();
+      renderFrame(cur);
+    },
+    {signal},
+  );
+
+  document.addEventListener(
+    'visibilitychange',
+    () => {
+      if (!document.hidden && visible) {
+        lastTs = 0;
+        kick();
+      }
+    },
+    {signal},
+  );
+
   section?.addEventListener(
     'rw:replay-countup',
     () => {
@@ -4267,8 +4528,8 @@ function setupEventShowcase(): void {
     {signal},
   );
 
-  prevBtn?.addEventListener('click', () => go(active - 1), {signal});
-  nextBtn?.addEventListener('click', () => go(active + 1), {signal});
+  prevBtn?.addEventListener('click', () => moveTo(Math.round(target) - 1), {signal});
+  nextBtn?.addEventListener('click', () => moveTo(Math.round(target) + 1), {signal});
 
   dots.forEach((dot) => {
     dot.addEventListener(
@@ -4300,6 +4561,7 @@ function setupEventShowcase(): void {
     if (!dragActive) return;
 
     dragActive = false;
+    stage.classList.remove('is-dragging');
     suppressClickUntil = performance.now() + 80;
 
     try {
@@ -4315,18 +4577,21 @@ function setupEventShowcase(): void {
     const dt = last && first ? Math.max(1, last.time - first.time) : 1;
     const vx = last && first && last !== first ? (last.x - first.x) / dt : 0;
     const dx = e.clientX - dragStartX;
-    const projected = currentProgress + (-vx * 140) / dragUnit;
+    const from = Math.round(dragStartTarget);
 
-    stage.classList.remove('is-dragging');
-    void stage.offsetWidth;
-    clearDragStyles();
-
-    if (projected > 0.32 || dx < -48 || vx < -0.3) {
-      go(active + 1);
-    } else if (projected < -0.32 || dx > 48 || vx > 0.3) {
-      go(active - 1);
+    if (window.innerWidth <= 749) {
+      if (Math.abs(dx) > 32 || Math.abs(vx) > 0.28) {
+        moveTo(from + (dx > 0 ? -1 : 1));
+      } else {
+        moveTo(from);
+      }
     } else {
-      go(active);
+      let nextT = Math.round(target + (-vx * 160) / dragUnit);
+      if (nextT === from && Math.abs(vx) > 0.28) {
+        nextT = from + (vx < 0 ? 1 : -1);
+      }
+      nextT = clamp(nextT, from - 2, from + 2);
+      moveTo(nextT);
     }
   };
 
@@ -4339,11 +4604,11 @@ function setupEventShowcase(): void {
       dragPointerId = e.pointerId;
       dragStartX = e.clientX;
       dragStartY = e.clientY;
+      dragStartTarget = target;
       dragActive = false;
       dragAbandoned = false;
-      currentProgress = 0;
       const activeCardWidth = cards[active]?.offsetWidth || stage.clientWidth || 720;
-      dragUnit = Math.max(200, activeCardWidth * 0.44);
+      dragUnit = Math.max(180, activeCardWidth * (window.innerWidth <= 749 ? 0.62 : 0.42));
       dragSamples = [{x: e.clientX, time: performance.now()}];
     },
     {signal},
@@ -4383,10 +4648,8 @@ function setupEventShowcase(): void {
       dragSamples.push({x: e.clientX, time: performance.now()});
       if (dragSamples.length > 6) dragSamples.shift();
 
-      const raw = -dx / dragUnit;
-      currentProgress =
-        Math.abs(raw) <= 1 ? raw : Math.sign(raw) * (1 + Math.min(0.35, (Math.abs(raw) - 1) * 0.25));
-      applyDragFrame(currentProgress);
+      target = dragStartTarget - dx / dragUnit;
+      kick();
     },
     {signal},
   );
@@ -4412,13 +4675,13 @@ function setupEventShowcase(): void {
       e.preventDefault();
       if (wheelLock) return;
       wheelAcc += e.deltaX;
-      if (Math.abs(wheelAcc) > 45) {
-        go(wheelAcc > 0 ? active + 1 : active - 1);
+      if (Math.abs(wheelAcc) > 42) {
+        moveTo(Math.round(target) + (wheelAcc > 0 ? 1 : -1));
         wheelAcc = 0;
         wheelLock = window.setTimeout(() => {
           wheelLock = 0;
           wheelAcc = 0;
-        }, 460);
+        }, 440);
       }
     },
     {passive: false, signal},
@@ -4429,10 +4692,10 @@ function setupEventShowcase(): void {
     (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
-        go(active + 1);
+        moveTo(Math.round(target) + 1);
       } else if (e.key === 'ArrowLeft') {
         e.preventDefault();
-        go(active - 1);
+        moveTo(Math.round(target) - 1);
       }
     },
     {signal},
@@ -4470,7 +4733,9 @@ function setupEventShowcase(): void {
     }
   });
 
-  render();
+  syncAriaAndDots();
+  syncMobileHeight();
+  renderFrame(cur);
 }
 
 function setupVisiMisi3D(): void {
@@ -4920,12 +5185,845 @@ function setupMobileHeaderControls(): void {
   });
 }
 
+function setupRegistration2027Dialog(): void {
+  const dialog = document.getElementById('pendaftaran-dialog') as HTMLDialogElement | null;
+  if (!dialog) return;
+
+  const modeBtns = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-reg-mode]'));
+  const panels = Array.from(dialog.querySelectorAll<HTMLElement>('[data-reg-panel]'));
+  const form = dialog.querySelector<HTMLFormElement>('[data-reg-form]');
+  const pageHeadEl = dialog.querySelector<HTMLElement>('[data-reg-page-head]');
+  const stepperEl = dialog.querySelector<HTMLElement>('[data-reg-stepper]');
+  const stepNodes = Array.from(dialog.querySelectorAll<HTMLButtonElement>('[data-reg-step-jump]'));
+  const stepLines = Array.from(dialog.querySelectorAll<HTMLElement>('[data-reg-line]'));
+  const stepPanes = Array.from(dialog.querySelectorAll<HTMLElement>('[data-reg-step]'));
+  const prevBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-prev]');
+  const nextBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-next]');
+  const submitBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-submit]');
+  const stepCounterEl = dialog.querySelector<HTMLElement>('[data-reg-step-counter]');
+
+  const receiptBox = dialog.querySelector<HTMLElement>('[data-reg-receipt]');
+  const receiptGreetingEl = dialog.querySelector<HTMLElement>('[data-reg-receipt-greeting]');
+  const receiptCodeEl = dialog.querySelector<HTMLElement>('[data-reg-receipt-code]');
+  const receiptSummaryEl = dialog.querySelector<HTMLElement>('[data-reg-receipt-summary]');
+  const copyCodeBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-copy-code]');
+  const resetFormBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-reset-form]');
+  const goStatusBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-go-status]');
+  const errorEl = dialog.querySelector<HTMLElement>('[data-reg-error]');
+
+  const regionSelect = dialog.querySelector<HTMLSelectElement>('#reg-region');
+  const rolePills = Array.from(dialog.querySelectorAll<HTMLLabelElement>('.reg-role-pill'));
+  const roleInputs = Array.from(dialog.querySelectorAll<HTMLInputElement>('input[name="role"]'));
+
+  const achListEl = dialog.querySelector<HTMLElement>('[data-reg-achievements-list]');
+  const addAchBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-add-achievement]');
+  const bioInput = dialog.querySelector<HTMLTextAreaElement>('#reg-bio');
+  const bioCountEl = dialog.querySelector<HTMLElement>('[data-reg-bio-count]');
+
+  const adatInput = dialog.querySelector<HTMLInputElement>('[data-reg-photo-adat-input]');
+  const adatPreview = dialog.querySelector<HTMLImageElement>('[data-reg-photo-adat-preview]');
+  const adatStage = dialog.querySelector<HTMLElement>('[data-reg-photo-adat-stage]');
+  const adatNote = dialog.querySelector<HTMLElement>('[data-reg-photo-adat-note]');
+  const adatBadge = dialog.querySelector<HTMLElement>('[data-reg-photo-adat-badge]');
+  const adatBtnLabel = dialog.querySelector<HTMLElement>('[data-reg-photo-adat-btn-label]');
+  const adatClearBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-photo-adat-clear]');
+
+  const kebesaranInput = dialog.querySelector<HTMLInputElement>('[data-reg-photo-kebesaran-input]');
+  const kebesaranPreview = dialog.querySelector<HTMLImageElement>('[data-reg-photo-kebesaran-preview]');
+  const kebesaranStage = dialog.querySelector<HTMLElement>('[data-reg-photo-kebesaran-stage]');
+  const kebesaranNote = dialog.querySelector<HTMLElement>('[data-reg-photo-kebesaran-note]');
+  const kebesaranBadge = dialog.querySelector<HTMLElement>('[data-reg-photo-kebesaran-badge]');
+  const kebesaranBtnLabel = dialog.querySelector<HTMLElement>('[data-reg-photo-kebesaran-btn-label]');
+  const kebesaranClearBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-photo-kebesaran-clear]');
+
+  const extraInput = dialog.querySelector<HTMLInputElement>('[data-reg-photo-extra-input]');
+  const extraListEl = dialog.querySelector<HTMLElement>('[data-reg-photo-extra-list]');
+
+  const docInput = dialog.querySelector<HTMLInputElement>('[data-reg-doc-input]');
+  const docStage = dialog.querySelector<HTMLElement>('[data-reg-doc-stage]');
+  const docNameEl = dialog.querySelector<HTMLElement>('[data-reg-doc-name]');
+  const docInfoEl = dialog.querySelector<HTMLElement>('[data-reg-doc-info]');
+  const docBadge = dialog.querySelector<HTMLElement>('[data-reg-doc-badge]');
+  const docBtnLabel = dialog.querySelector<HTMLElement>('[data-reg-doc-btn-label]');
+  const docClearBtn = dialog.querySelector<HTMLButtonElement>('[data-reg-doc-clear]');
+
+  const precheckSummaryEl = dialog.querySelector<HTMLElement>('[data-reg-precheck-summary]');
+
+  const lookupForm = dialog.querySelector<HTMLFormElement>('[data-reg-lookup-form]');
+  const lookupInput = dialog.querySelector<HTMLInputElement>('#reg-lookup-input');
+  const lookupResults = dialog.querySelector<HTMLElement>('[data-reg-lookup-results]');
+
+  if (regionSelect && regionSelect.options.length <= 1) {
+    SUMBAR_REGIONS.forEach((region) => {
+      const opt = document.createElement('option');
+      opt.value = region;
+      opt.textContent = region;
+      regionSelect.appendChild(opt);
+    });
+  }
+
+  let currentStep = 1;
+  const TOTAL_STEPS = 4;
+  const MAX_ACHIEVEMENTS = 12;
+  let achievementItems: string[] = [''];
+  let uploadedAdatRef = '';
+  let uploadedKebesaranRef = '';
+  let uploadedExtras: {label: string; ref: string; previewUrl: string}[] = [];
+  let uploadedDoc: {refUrl: string; fileName: string; mimeType: string; size: number} | null = null;
+  let lastCreatedCode = '';
+
+  const showError = (msg: string) => {
+    if (!errorEl) return;
+    errorEl.textContent = msg;
+    errorEl.hidden = !msg;
+    if (msg) {
+      errorEl.scrollIntoView({behavior: 'smooth', block: 'nearest'});
+    }
+  };
+
+  const bindAutoLowercase = (el: HTMLInputElement | HTMLTextAreaElement) => {
+    el.addEventListener('input', (e) => {
+      if ((e as InputEvent).isComposing) return;
+      const lower = el.value.toLowerCase();
+      if (el.value !== lower) {
+        const start = el.selectionStart;
+        const end = el.selectionEnd;
+        el.value = lower;
+        if (start !== null && end !== null) {
+          try {
+            el.setSelectionRange(start, end);
+          } catch {
+            // Some input types (e.g. email) do not expose selectionRange
+          }
+        }
+      }
+    });
+  };
+
+  const bindAutoTitleCase = (el: HTMLInputElement | HTMLTextAreaElement) => {
+    const apply = (val: string, preserveCaret: boolean) => {
+      if (el.value !== val) {
+        const start = preserveCaret ? el.selectionStart : null;
+        const end = preserveCaret ? el.selectionEnd : null;
+        el.value = val;
+        if (start !== null && end !== null) {
+          try {
+            el.setSelectionRange(start, end);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    };
+    el.addEventListener('input', (e) => {
+      if ((e as InputEvent).isComposing) return;
+      apply(toTitleCaseLive(el.value), true);
+    });
+    el.addEventListener('blur', () => {
+      if (!el.value.trim()) return;
+      apply(toTitleCaseWords(el.value), false);
+    });
+  };
+
+  if (form) {
+    form
+      .querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('input[type="text"], textarea')
+      .forEach((fieldEl) => bindAutoTitleCase(fieldEl));
+    form
+      .querySelectorAll<HTMLInputElement>('input[type="email"]')
+      .forEach((emailEl) => bindAutoLowercase(emailEl));
+  }
+
+  const renderAchievementRows = (focusIndex?: number) => {
+    if (!achListEl) return;
+    if (achievementItems.length === 0) achievementItems = [''];
+    achListEl.replaceChildren();
+
+    achievementItems.forEach((val, idx) => {
+      const row = document.createElement('div');
+      row.className = 'reg-ach-row';
+
+      const num = document.createElement('span');
+      num.className = 'reg-ach-num is-tabular';
+      num.textContent = `${idx + 1}.`;
+
+      const inp = document.createElement('input');
+      inp.type = 'text';
+      inp.className = 'reg-ach-input';
+      inp.value = val ? toTitleCaseLive(val) : '';
+      inp.placeholder =
+        idx === 0
+          ? 'Contoh: Juara 1 Uda Duta Wisata Kab. Agam 2026'
+          : `Poin prestasi ke-${idx + 1}...`;
+      inp.setAttribute('aria-label', `Prestasi ke-${idx + 1}`);
+      bindAutoTitleCase(inp);
+      inp.addEventListener('input', () => {
+        achievementItems[idx] = toTitleCaseLive(inp.value);
+      });
+      inp.addEventListener('blur', () => {
+        achievementItems[idx] = toTitleCaseWords(inp.value);
+      });
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          if (achievementItems.length < MAX_ACHIEVEMENTS) {
+            achievementItems.push('');
+            renderAchievementRows(achievementItems.length - 1);
+          }
+        }
+      });
+
+      row.append(num, inp);
+
+      if (achievementItems.length > 1 || val.trim().length > 0) {
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'reg-ach-remove';
+        removeBtn.setAttribute(
+          'aria-label',
+          achievementItems.length > 1 ? `Hapus prestasi ke-${idx + 1}` : 'Kosongkan baris prestasi',
+        );
+        removeBtn.textContent = '×';
+        removeBtn.addEventListener('click', () => {
+          if (achievementItems.length > 1) {
+            achievementItems.splice(idx, 1);
+          } else {
+            achievementItems[0] = '';
+          }
+          renderAchievementRows(Math.min(idx, achievementItems.length - 1));
+        });
+        row.appendChild(removeBtn);
+      }
+
+      achListEl.appendChild(row);
+      if (focusIndex === idx) {
+        window.requestAnimationFrame(() => inp.focus());
+      }
+    });
+
+    if (addAchBtn) {
+      addAchBtn.disabled = achievementItems.length >= MAX_ACHIEVEMENTS;
+    }
+  };
+
+  addAchBtn?.addEventListener('click', () => {
+    if (achievementItems.length >= MAX_ACHIEVEMENTS) return;
+    achievementItems.push('');
+    renderAchievementRows(achievementItems.length - 1);
+  });
+
+  const updateBioCounter = () => {
+    if (!bioInput || !bioCountEl) return;
+    const len = bioInput.value.trim().length;
+    bioCountEl.textContent = `${len} / min. 20 karakter`;
+    bioCountEl.classList.toggle('is-ready', len >= 20);
+  };
+
+  bioInput?.addEventListener('input', updateBioCounter);
+
+  const renderPrecheckSummary = () => {
+    if (!precheckSummaryEl || !form) return;
+    const fd = new FormData(form);
+    const roleLabel = fd.get('role') === 'uni' ? 'Uni (Putri)' : 'Uda (Putra)';
+    const region = String(fd.get('region') || '').trim() || 'Belum dipilih';
+    const fullName = String(fd.get('fullName') || '').trim() || 'Belum diisi';
+    const achCount = achievementItems.map((s) => s.trim()).filter(Boolean).length;
+    const photoCount =
+      (uploadedAdatRef ? 1 : 0) + (uploadedKebesaranRef ? 1 : 0) + uploadedExtras.length;
+    const docLabel = uploadedDoc ? uploadedDoc.fileName : 'Belum diunggah';
+
+    precheckSummaryEl.replaceChildren();
+    const items: [string, string][] = [
+      ['Nama & Utusan', `${fullName} · ${roleLabel} · ${region}`],
+      ['Poin Prestasi', achCount > 0 ? `${achCount} poin tercantum` : 'Tidak ada tambahan poin'],
+      [
+        'Foto Resmi',
+        `${photoCount} foto (${uploadedAdatRef ? 'Adat ✓' : 'Adat ✗'}, ${uploadedKebesaranRef ? 'Kebesaran ✓' : 'Kebesaran ✗'}${uploadedExtras.length ? `, +${uploadedExtras.length}` : ''})`,
+      ],
+      ['Surat Rekomendasi', docLabel],
+    ];
+
+    items.forEach(([labelText, valueText]) => {
+      const box = document.createElement('div');
+      const dt = document.createElement('dt');
+      dt.textContent = labelText;
+      const dd = document.createElement('dd');
+      dd.textContent = valueText;
+      box.append(dt, dd);
+      precheckSummaryEl.appendChild(box);
+    });
+  };
+
+  const renderStepUi = () => {
+    stepPanes.forEach((pane) => {
+      const stepNum = Number(pane.dataset.regStep || 1);
+      pane.hidden = stepNum !== currentStep;
+    });
+
+    stepNodes.forEach((node) => {
+      const stepNum = Number(node.dataset.regStepJump || 1);
+      const isDone = stepNum < currentStep;
+      const isActive = stepNum === currentStep;
+      node.classList.toggle('is-active', isActive);
+      node.classList.toggle('is-done', isDone);
+      if (isActive) node.setAttribute('aria-current', 'step');
+      else node.removeAttribute('aria-current');
+      const circle = node.querySelector<HTMLElement>('.reg-step-circle');
+      if (circle) {
+        circle.textContent = isDone ? '✓' : String(stepNum);
+      }
+    });
+
+    stepLines.forEach((line) => {
+      const lineIdx = Number(line.dataset.regLine || 1);
+      line.classList.toggle('is-done', lineIdx < currentStep);
+    });
+
+    if (prevBtn) prevBtn.disabled = currentStep <= 1;
+    if (nextBtn) nextBtn.hidden = currentStep >= TOTAL_STEPS;
+    if (submitBtn) submitBtn.hidden = currentStep < TOTAL_STEPS;
+    if (stepCounterEl) stepCounterEl.textContent = `Langkah ${currentStep} dari ${TOTAL_STEPS}`;
+
+    if (currentStep === TOTAL_STEPS) {
+      renderPrecheckSummary();
+    }
+  };
+
+  const validateStep = (step: number): string | null => {
+    if (!form) return null;
+    const fd = new FormData(form);
+    if (step === 1) {
+      const region = String(fd.get('region') || '').trim();
+      const fullName = String(fd.get('fullName') || '').trim();
+      const age = String(fd.get('age') || '').trim();
+      const phone = String(fd.get('phone') || '').trim();
+      const email = String(fd.get('email') || '').trim();
+      const education = String(fd.get('education') || '').trim();
+      if (!region) return 'Pilih Kabupaten / Kota utusan daerah Anda.';
+      if (fullName.length < 3) return 'Lengkapi nama lengkap peserta terlebih dahulu.';
+      if (!age || Number(age) < 17 || Number(age) > 27) {
+        return 'Masukkan usia yang valid (17–27 tahun).';
+      }
+      if (phone.length < 9) return 'Masukkan nomor WhatsApp aktif yang dapat dihubungi panitia.';
+      if (!email || !email.includes('@')) return 'Masukkan alamat email aktif yang valid.';
+      if (!education) return 'Isi pendidikan terakhir atau perguruan tinggi.';
+    } else if (step === 2) {
+      const advocacy = String(fd.get('advocacy') || '').trim();
+      const bio = String(fd.get('bio') || '').trim();
+      if (!advocacy) return 'Isi fokus advokasi pariwisata atau budaya Anda.';
+      if (bio.length < 20) return 'Lengkapi biografi singkat minimal 20 karakter.';
+    } else if (step === 3) {
+      if (!uploadedAdatRef) {
+        return 'Unggah Foto 1 menggunakan Baju Adat Daerah terlebih dahulu.';
+      }
+      if (!uploadedKebesaranRef) {
+        return 'Unggah Foto 2 menggunakan Baju Kebesaran Duta Wisata terlebih dahulu.';
+      }
+    } else if (step === 4) {
+      const recNumber = String(fd.get('recNumber') || '').trim();
+      const recIssuer = String(fd.get('recIssuer') || '').trim();
+      const recDate = String(fd.get('recDate') || '').trim();
+      if (!recNumber || !recIssuer || !recDate) {
+        return 'Lengkapi nomor, tanggal, dan instansi penerbit Surat Rekomendasi Kab/Kota.';
+      }
+      if (!uploadedDoc) {
+        return 'Unggah file Surat Rekomendasi resmi dari Kabupaten/Kota (PDF/JPG/PNG).';
+      }
+    }
+    return null;
+  };
+
+  const goToStep = (targetStep: number) => {
+    const nextStep = clamp(targetStep, 1, TOTAL_STEPS);
+    if (nextStep > currentStep) {
+      for (let s = currentStep; s < nextStep; s += 1) {
+        const err = validateStep(s);
+        if (err) {
+          currentStep = s;
+          renderStepUi();
+          showError(err);
+          return;
+        }
+      }
+    }
+    showError('');
+    currentStep = nextStep;
+    renderStepUi();
+  };
+
+  nextBtn?.addEventListener('click', () => goToStep(currentStep + 1));
+  prevBtn?.addEventListener('click', () => goToStep(currentStep - 1));
+  stepNodes.forEach((node) => {
+    node.addEventListener('click', () => {
+      const targetStep = Number(node.dataset.regStepJump || 1);
+      goToStep(targetStep);
+    });
+  });
+
+  const switchMode = (mode: 'form' | 'status') => {
+    modeBtns.forEach((btn) => {
+      const active = btn.dataset.regMode === mode;
+      btn.classList.toggle('is-active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    panels.forEach((panel) => {
+      const match = panel.dataset.regPanel === mode;
+      panel.hidden = !match;
+    });
+  };
+
+  modeBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.regMode === 'status' ? 'status' : 'form';
+      switchMode(mode);
+    });
+  });
+
+  const getRoleFallbackSvg = () => {
+    const checkedRole = roleInputs.find((inp) => inp.checked)?.value === 'uni' ? 'uni' : 'uda';
+    return checkedRole === 'uni'
+      ? '/assets/placeholders/silhouette-uni.svg'
+      : '/assets/placeholders/silhouette-uda.svg';
+  };
+
+  const syncRoleVisual = () => {
+    const fallbackSrc = getRoleFallbackSvg();
+    rolePills.forEach((pill) => {
+      const inp = pill.querySelector<HTMLInputElement>('input[name="role"]');
+      pill.classList.toggle('is-selected', Boolean(inp?.checked));
+    });
+    if (!uploadedAdatRef && adatPreview) adatPreview.src = fallbackSrc;
+    if (!uploadedKebesaranRef && kebesaranPreview) kebesaranPreview.src = fallbackSrc;
+  };
+
+  roleInputs.forEach((inp) => {
+    inp.addEventListener('change', syncRoleVisual);
+  });
+
+  const bindStageTrigger = (stage: HTMLElement | null, input: HTMLInputElement | null) => {
+    if (!stage || !input) return;
+    stage.addEventListener('click', (e) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('button, label')) return;
+      input.click();
+    });
+    stage.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        input.click();
+      }
+    });
+  };
+
+  bindStageTrigger(adatStage, adatInput);
+  bindStageTrigger(kebesaranStage, kebesaranInput);
+  bindStageTrigger(docStage, docInput);
+
+  const clearAdatPhoto = () => {
+    uploadedAdatRef = '';
+    if (adatInput) adatInput.value = '';
+    if (adatPreview) adatPreview.src = getRoleFallbackSvg();
+    adatStage?.classList.remove('has-file');
+    if (adatNote) adatNote.textContent = 'Klik area ini untuk memilih foto';
+    if (adatBadge) {
+      adatBadge.textContent = 'Wajib';
+      adatBadge.classList.remove('is-done');
+    }
+    if (adatBtnLabel) adatBtnLabel.textContent = 'Pilih Foto Baju Adat';
+    if (adatClearBtn) adatClearBtn.hidden = true;
+  };
+
+  const clearKebesaranPhoto = () => {
+    uploadedKebesaranRef = '';
+    if (kebesaranInput) kebesaranInput.value = '';
+    if (kebesaranPreview) kebesaranPreview.src = getRoleFallbackSvg();
+    kebesaranStage?.classList.remove('has-file');
+    if (kebesaranNote) kebesaranNote.textContent = 'Klik area ini untuk memilih foto';
+    if (kebesaranBadge) {
+      kebesaranBadge.textContent = 'Wajib';
+      kebesaranBadge.classList.remove('is-done');
+    }
+    if (kebesaranBtnLabel) kebesaranBtnLabel.textContent = 'Pilih Foto Baju Kebesaran';
+    if (kebesaranClearBtn) kebesaranClearBtn.hidden = true;
+  };
+
+  const clearDocFile = () => {
+    uploadedDoc = null;
+    if (docInput) docInput.value = '';
+    docStage?.classList.remove('has-file');
+    if (docNameEl) docNameEl.textContent = 'Klik area ini untuk memilih file surat rekomendasi';
+    if (docInfoEl) docInfoEl.textContent = 'Format PDF, JPG, atau PNG · Maksimal 5 MB';
+    if (docBadge) {
+      docBadge.textContent = 'Wajib · PDF/JPG/PNG';
+      docBadge.classList.remove('is-done');
+    }
+    if (docBtnLabel) docBtnLabel.textContent = 'Pilih File Surat';
+    if (docClearBtn) docClearBtn.hidden = true;
+    renderPrecheckSummary();
+  };
+
+  adatClearBtn?.addEventListener('click', clearAdatPhoto);
+  kebesaranClearBtn?.addEventListener('click', clearKebesaranPhoto);
+  docClearBtn?.addEventListener('click', clearDocFile);
+
+  adatInput?.addEventListener('change', async () => {
+    const file = adatInput.files?.[0];
+    if (!file) return;
+    showError('');
+    try {
+      const res = await saveCompressedAdminImage(file, 'portrait');
+      uploadedAdatRef = res.refUrl;
+      if (adatPreview) adatPreview.src = res.objectUrl;
+      adatStage?.classList.add('has-file');
+      if (adatNote) {
+        adatNote.textContent = `${res.width}×${res.height}px · ${formatBytesCompact(res.compressedBytes)}`;
+      }
+      if (adatBadge) {
+        adatBadge.textContent = 'Terunggah';
+        adatBadge.classList.add('is-done');
+      }
+      if (adatBtnLabel) adatBtnLabel.textContent = 'Ganti Foto';
+      if (adatClearBtn) adatClearBtn.hidden = false;
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Gagal memproses foto baju adat.');
+    }
+  });
+
+  kebesaranInput?.addEventListener('change', async () => {
+    const file = kebesaranInput.files?.[0];
+    if (!file) return;
+    showError('');
+    try {
+      const res = await saveCompressedAdminImage(file, 'portrait');
+      uploadedKebesaranRef = res.refUrl;
+      if (kebesaranPreview) kebesaranPreview.src = res.objectUrl;
+      kebesaranStage?.classList.add('has-file');
+      if (kebesaranNote) {
+        kebesaranNote.textContent = `${res.width}×${res.height}px · ${formatBytesCompact(res.compressedBytes)}`;
+      }
+      if (kebesaranBadge) {
+        kebesaranBadge.textContent = 'Terunggah';
+        kebesaranBadge.classList.add('is-done');
+      }
+      if (kebesaranBtnLabel) kebesaranBtnLabel.textContent = 'Ganti Foto';
+      if (kebesaranClearBtn) kebesaranClearBtn.hidden = false;
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Gagal memproses foto baju kebesaran.');
+    }
+  });
+
+  const renderExtraPhotoThumbs = () => {
+    if (!extraListEl) return;
+    extraListEl.replaceChildren();
+    extraListEl.hidden = uploadedExtras.length === 0;
+    uploadedExtras.forEach((item, idx) => {
+      const chip = document.createElement('div');
+      chip.className = 'reg-extra-chip';
+      const img = document.createElement('img');
+      img.src = item.previewUrl;
+      img.alt = item.label;
+      const meta = document.createElement('span');
+      meta.textContent = item.label;
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'reg-extra-remove';
+      del.setAttribute('aria-label', `Hapus ${item.label}`);
+      del.textContent = '×';
+      del.addEventListener('click', () => {
+        uploadedExtras = uploadedExtras.filter((_, i) => i !== idx);
+        renderExtraPhotoThumbs();
+      });
+      chip.append(img, meta, del);
+      extraListEl.appendChild(chip);
+    });
+  };
+
+  extraInput?.addEventListener('change', async () => {
+    const files = Array.from(extraInput.files ?? []);
+    if (!files.length) return;
+    showError('');
+    for (const file of files) {
+      try {
+        const res = await saveCompressedAdminImage(file, 'portrait');
+        const label = file.name.replace(/\.[^.]+$/, '').slice(0, 26) || `Foto Tambahan ${uploadedExtras.length + 1}`;
+        uploadedExtras.push({label, ref: res.refUrl, previewUrl: res.objectUrl});
+      } catch (err) {
+        showError(err instanceof Error ? err.message : 'Sebagian foto tambahan gagal diproses.');
+      }
+    }
+    extraInput.value = '';
+    renderExtraPhotoThumbs();
+  });
+
+  docInput?.addEventListener('change', async () => {
+    const file = docInput.files?.[0];
+    if (!file) return;
+    showError('');
+    try {
+      const res = await saveRegistrationDocument(file);
+      uploadedDoc = res;
+      docStage?.classList.add('has-file');
+      if (docNameEl) docNameEl.textContent = res.fileName;
+      if (docInfoEl) {
+        const typeLabel = res.mimeType.includes('pdf') ? 'PDF Resmi' : 'Scan Gambar';
+        docInfoEl.textContent = `${typeLabel} · ${formatBytesCompact(res.size)} · Tersimpan aman`;
+      }
+      if (docBadge) {
+        docBadge.textContent = 'Terunggah';
+        docBadge.classList.add('is-done');
+      }
+      if (docBtnLabel) docBtnLabel.textContent = 'Ganti File';
+      if (docClearBtn) docClearBtn.hidden = false;
+      renderPrecheckSummary();
+    } catch (err) {
+      showError(err instanceof Error ? err.message : 'Gagal mengunggah surat rekomendasi.');
+    }
+  });
+
+  const resetRegistrationState = () => {
+    form?.reset();
+    currentStep = 1;
+    achievementItems = [''];
+    renderAchievementRows();
+    updateBioCounter();
+    uploadedExtras = [];
+    renderExtraPhotoThumbs();
+    clearAdatPhoto();
+    clearKebesaranPhoto();
+    clearDocFile();
+    showError('');
+
+    syncRoleVisual();
+    renderStepUi();
+    if (pageHeadEl) pageHeadEl.hidden = false;
+    if (stepperEl) stepperEl.hidden = false;
+    if (form) form.hidden = false;
+    if (receiptBox) receiptBox.hidden = true;
+  };
+
+  form?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    for (let s = 1; s <= TOTAL_STEPS; s += 1) {
+      const err = validateStep(s);
+      if (err) {
+        currentStep = s;
+        renderStepUi();
+        showError(err);
+        return;
+      }
+    }
+
+    if (!uploadedDoc) return;
+    const fd = new FormData(form);
+    const role: RoleFilter = fd.get('role') === 'uni' ? 'uni' : 'uda';
+    const region = String(fd.get('region') || '').trim();
+    const fullName = toTitleCaseWords(String(fd.get('fullName') || ''));
+    const shortName = toTitleCaseWords(String(fd.get('shortName') || ''));
+    const age = String(fd.get('age') || '').trim();
+    const phone = String(fd.get('phone') || '').trim();
+    const email = String(fd.get('email') || '').trim().toLowerCase();
+    const education = toTitleCaseWords(String(fd.get('education') || ''));
+    const profession = toTitleCaseWords(String(fd.get('profession') || ''));
+    const advocacy = toTitleCaseWords(String(fd.get('advocacy') || ''));
+    const achievementsText = achievementItems
+      .map((item) => toTitleCaseWords(item))
+      .filter(Boolean)
+      .join('\n');
+    const bio = toTitleCaseWords(String(fd.get('bio') || ''));
+    const recNumber = toTitleCaseWords(String(fd.get('recNumber') || ''));
+    const recIssuer = toTitleCaseWords(String(fd.get('recIssuer') || ''));
+    const recDate = String(fd.get('recDate') || '').trim();
+
+    showError('');
+    const created = submitRegistration2027({
+      role,
+      region,
+      fullName,
+      shortName: shortName || fullName,
+      age,
+      phone,
+      email,
+      education,
+      profession,
+      advocacy,
+      achievementsText,
+      bio,
+      photoAdatRef: uploadedAdatRef,
+      photoKebesaranRef: uploadedKebesaranRef,
+      extraPhotos: uploadedExtras.map(({label, ref}) => ({label, ref})),
+      recLetterRef: uploadedDoc.refUrl,
+      recLetterName: uploadedDoc.fileName,
+      recLetterMime: uploadedDoc.mimeType,
+      recLetterSize: uploadedDoc.size,
+      recNumber,
+      recIssuer,
+      recDate,
+    });
+
+    lastCreatedCode = created.regCode;
+    if (receiptCodeEl) receiptCodeEl.textContent = created.regCode;
+    if (receiptGreetingEl) {
+      receiptGreetingEl.textContent = `Selamat, ${created.fullName}! Berkas pendaftaran Anda sebagai utusan ${created.region} telah berhasil dikirim dan tercatat di sistem Panitia Pemilihan Uda & Uni Duta Wisata Sumatera Barat 2027.`;
+    }
+    if (receiptSummaryEl) {
+      receiptSummaryEl.replaceChildren();
+      const totalPhotos = 2 + (created.extraPhotos?.length ?? 0);
+      const totalAch = created.achievementsText
+        ? created.achievementsText.split(/\r?\n/).filter((l) => l.trim()).length
+        : 0;
+      const rows: [string, string][] = [
+        ['Nama Peserta', created.fullName],
+        ['Utusan Daerah', `${created.role === 'uda' ? 'Uda' : 'Uni'} · ${created.region}`],
+        ['Foto Resmi', `${totalPhotos} Foto (Baju Adat Daerah, Baju Kebesaran${totalPhotos > 2 ? ' + Tambahan' : ''})`],
+        ['Prestasi & Surat', `${totalAch} Poin Prestasi · Surat ${created.recNumber}`],
+      ];
+      rows.forEach(([dtText, ddText]) => {
+        const wrap = document.createElement('div');
+        const dt = document.createElement('dt');
+        dt.textContent = dtText;
+        const dd = document.createElement('dd');
+        dd.textContent = ddText;
+        wrap.append(dt, dd);
+        receiptSummaryEl.appendChild(wrap);
+      });
+    }
+
+    if (pageHeadEl) pageHeadEl.hidden = true;
+    if (stepperEl) stepperEl.hidden = true;
+    form.hidden = true;
+    if (receiptBox) receiptBox.hidden = false;
+    dialog.scrollTo({top: 0, behavior: 'smooth'});
+  });
+
+  copyCodeBtn?.addEventListener('click', async () => {
+    const code = receiptCodeEl?.textContent?.trim() || lastCreatedCode;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      copyCodeBtn.textContent = 'Tersalin!';
+      window.setTimeout(() => {
+        copyCodeBtn.textContent = 'Salin Kode';
+      }, 2200);
+    } catch {
+      copyCodeBtn.textContent = code;
+    }
+  });
+
+  resetFormBtn?.addEventListener('click', resetRegistrationState);
+
+  const renderLookupResults = (query: string) => {
+    if (!lookupResults) return;
+    lookupResults.replaceChildren();
+    const matches: PublicRegistrationStatusView[] = lookupRegistrationStatus(query);
+    if (!matches.length) {
+      const empty = document.createElement('div');
+      empty.className = 'reg-lookup-empty-light';
+      empty.textContent = query.trim()
+        ? `Tidak ditemukan berkas dengan kata kunci "${query.trim()}". Pastikan nomor urut, kode pendaftaran, atau nama sesuai.`
+        : 'Masukkan nomor pendaftaran (misal 01 atau 01-KSL-UDA-2027) untuk memantau hasil verifikasi panitia.';
+      lookupResults.appendChild(empty);
+      return;
+    }
+
+    const statusMeta: Record<RegistrationStatus, {label: string; cls: string}> = {
+      pending: {label: 'Menunggu Verifikasi Panitia', cls: 'is-pending'},
+      revision: {label: 'Perlu Perbaikan Berkas', cls: 'is-revision'},
+      approved: {label: 'Disahkan sebagai Finalis 2027', cls: 'is-approved'},
+      rejected: {label: 'Belum Memenuhi Syarat', cls: 'is-rejected'},
+    };
+
+    matches.forEach((item) => {
+      const meta = statusMeta[item.status];
+      const card = document.createElement('div');
+      card.className = 'reg-status-card-light';
+
+      const head = document.createElement('div');
+      head.className = 'reg-status-head';
+
+      const idWrap = document.createElement('div');
+      const codeBadge = document.createElement('span');
+      codeBadge.className = 'reg-status-code-light is-tabular';
+      codeBadge.textContent = item.regCode;
+      const nameEl = document.createElement('h4');
+      nameEl.textContent = item.fullName;
+      const subEl = document.createElement('p');
+      subEl.textContent = `${item.role === 'uda' ? 'Uda' : 'Uni'} · ${item.region}${
+        item.finalistNumber ? ` · No. Finalis #${item.finalistNumber}` : ''
+      }`;
+      idWrap.append(codeBadge, nameEl, subEl);
+
+      const pill = document.createElement('span');
+      pill.className = `reg-status-pill-light ${meta.cls}`;
+      pill.textContent = meta.label;
+
+      head.append(idWrap, pill);
+
+      const metaRow = document.createElement('div');
+      metaRow.className = 'reg-status-chips-light';
+      const recChip = document.createElement('span');
+      recChip.className = 'reg-mini-chip';
+      recChip.textContent = `Surat Rekomendasi: ${item.recNumber}`;
+      const photoChip = document.createElement('span');
+      photoChip.className = 'reg-mini-chip';
+      photoChip.textContent = `${item.photoCount} Foto Terlampir`;
+      const docChip = document.createElement('span');
+      docChip.className = 'reg-mini-chip';
+      docChip.textContent = item.hasRecLetter ? 'Surat Daerah Lengkap' : 'Surat Belum Lengkap';
+      metaRow.append(recChip, photoChip, docChip);
+
+      const noteBox = document.createElement('div');
+      noteBox.className = 'reg-status-note-light';
+      const noteLabel = document.createElement('strong');
+      noteLabel.textContent = 'Catatan Panitia Verifikasi';
+      const noteText = document.createElement('p');
+      noteText.textContent = item.reviewerNote || 'Berkas sedang dalam peninjauan tim verifikasi.';
+      noteBox.append(noteLabel, noteText);
+
+      card.append(head, metaRow, noteBox);
+      lookupResults.appendChild(card);
+    });
+  };
+
+  goStatusBtn?.addEventListener('click', () => {
+    switchMode('status');
+    if (lookupInput && lastCreatedCode) {
+      lookupInput.value = lastCreatedCode;
+      renderLookupResults(lastCreatedCode);
+    }
+  });
+
+  lookupForm?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    renderLookupResults(lookupInput?.value || '');
+  });
+
+  dialog.addEventListener('cs:reset-open', () => {
+    switchMode('form');
+    if (form && receiptBox && !receiptBox.hidden) {
+      resetRegistrationState();
+    } else {
+      renderStepUi();
+    }
+  });
+
+  subscribeCmsChange(() => {
+    if (dialog.open && lookupInput?.value.trim()) {
+      renderLookupResults(lookupInput.value);
+    }
+  });
+
+  renderAchievementRows();
+  updateBioCounter();
+  renderStepUi();
+}
+
 async function bootstrapPortal(): Promise<void> {
   registerMediaCacheWorker();
   setupSearch();
   setupInfoDialogs();
   setupAnchorLinks();
   setupVisiMisi3D();
+  setupRegistration2027Dialog();
   setupMediaViewCursor();
   setupTopNavAndPills();
   setupMobileHeaderControls();

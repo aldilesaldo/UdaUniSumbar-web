@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" href="/assets/aistudio/logo_uda_uni_2027_a45f5678.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Product+Sans:wght@400;500;700&display=swap">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
   <link rel="preload" as="image" href="/assets/uda-uni-2024/uda-pasaman-640.webp?v=2024-r2" fetchpriority="high">
   <link rel="stylesheet" href="/src/styles.css">
 </head>
@@ -91,6 +91,13 @@
         </svg>
         <span>Visi &amp; Misi</span>
       </button>
+      <button type="button" class="top-nav-btn top-nav-btn--cta" data-open-dialog="pendaftaran-dialog">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.12 2.12 0 1 1 3 3L7 19l-4 1 1-4Z"/>
+        </svg>
+        <span>Daftar 2027</span>
+      </button>
     </nav>
 
     <div id="header-search-panel" class="header-search" role="search">
@@ -129,7 +136,7 @@
       data-reflect="false"
       data-autoplay="true"
       data-speed="5000"
-      style="--rw-c-stage:#ffffff;--rw-c-panel:#ffffff;--rw-c-text:#161412;--rw-c-muted:#686058;--rw-c-accent:#8b1e24;--rw-c-on-accent:#ffffff;--rw-c-line:#dfd8cf;--rw-card:#f5f1ea;--rw-hf:var(--font-heading--family, 'Product Sans', Helvetica, Arial, sans-serif);--rw-hw:700;--rw-h-d:44px;--rw-h-m:24px;--rw-sub-d:12px;--rw-sub-m:12px;--rw-eyebrow-d:11px;--rw-eyebrow-m:10px;--rw-label-d:10px;--rw-label-m:9px;--rw-chip-d:17px;--rw-chip-m:16px;--rw-ph-d:18px;--rw-ph-m:15px;--rw-pt-size-d:14px;--rw-pt-size-m:13px;--rw-thumb-d:76px;--rw-thumb-m:56px;--rw-tag-top:18px;--rw-tag-left:0px;--rw-thumb-radius:0px;--rw-morph:900ms;--rw-bar-r:20px;--rw-panel-w:448px;--rw-panel-pad-d:30px;--rw-radius:0px;--rw-max:none;--rw-speed:5s;--rw-ax:40%;--rw-btn-radius:0px;"
+      style="--rw-c-stage:#ffffff;--rw-c-panel:#ffffff;--rw-c-text:#161412;--rw-c-muted:#686058;--rw-c-accent:#8b1e24;--rw-c-on-accent:#ffffff;--rw-c-line:#dfd8cf;--rw-card:#f5f1ea;--rw-hf:var(--font-heading--family, 'Manrope', Helvetica, Arial, sans-serif);--rw-hw:700;--rw-h-d:44px;--rw-h-m:24px;--rw-sub-d:12px;--rw-sub-m:12px;--rw-eyebrow-d:11px;--rw-eyebrow-m:10px;--rw-label-d:10px;--rw-label-m:9px;--rw-chip-d:17px;--rw-chip-m:16px;--rw-ph-d:18px;--rw-ph-m:15px;--rw-pt-size-d:14px;--rw-pt-size-m:13px;--rw-thumb-d:76px;--rw-thumb-m:56px;--rw-tag-top:18px;--rw-tag-left:0px;--rw-thumb-radius:0px;--rw-morph:900ms;--rw-bar-r:20px;--rw-panel-w:448px;--rw-panel-pad-d:30px;--rw-radius:0px;--rw-max:none;--rw-speed:5s;--rw-ax:40%;--rw-btn-radius:0px;"
     >
       <div class="rw__sticky">
         <div class="rw__grid">
@@ -1319,6 +1326,367 @@
           </article>
         </div>
       </div>
+    </div>
+  </dialog>
+
+  <!-- Dialog Pop-Up Pendaftaran Peserta Pemilihan Uda & Uni Sumbar 2027 (Flat Minimalist 4-Step) -->
+  <dialog id="pendaftaran-dialog" class="info-dialog reg-dialog" aria-labelledby="reg-headline">
+    <div class="reg-shell" data-reg-frame>
+      <div class="reg-topbar">
+        <div class="reg-mode-switch" role="tablist" aria-label="Mode Pendaftaran 2027">
+          <button type="button" class="reg-mode-btn is-active" role="tab" aria-selected="true" data-reg-mode="form">Formulir Pendaftaran</button>
+          <button type="button" class="reg-mode-btn" role="tab" aria-selected="false" data-reg-mode="status">Cek Status Berkas</button>
+        </div>
+        <button type="button" class="reg-close-btn" data-close-dialog aria-label="Tutup panel Pendaftaran 2027">×</button>
+      </div>
+
+      <section class="reg-view" data-reg-panel="form">
+        <header class="reg-page-head" data-reg-page-head>
+          <h2 id="reg-headline" class="reg-page-title">Pendaftaran Peserta 2027</h2>
+          <p class="reg-page-sub">Lengkapi data diri, prestasi, foto baju adat &amp; baju kebesaran, serta surat rekomendasi kabupaten/kota. Huruf besar otomatis disesuaikan ke huruf kecil.</p>
+        </header>
+
+        <nav class="reg-stepper" aria-label="Tahapan Pendaftaran" data-reg-stepper>
+          <button type="button" class="reg-step-node is-active" data-reg-step-jump="1" aria-current="step">
+            <span class="reg-step-circle">1</span>
+            <span class="reg-step-name">Informasi Dasar</span>
+          </button>
+          <span class="reg-step-line" data-reg-line="1" aria-hidden="true"></span>
+          <button type="button" class="reg-step-node" data-reg-step-jump="2">
+            <span class="reg-step-circle">2</span>
+            <span class="reg-step-name">Advokasi &amp; Prestasi</span>
+          </button>
+          <span class="reg-step-line" data-reg-line="2" aria-hidden="true"></span>
+          <button type="button" class="reg-step-node" data-reg-step-jump="3">
+            <span class="reg-step-circle">3</span>
+            <span class="reg-step-name">Foto Resmi</span>
+          </button>
+          <span class="reg-step-line" data-reg-line="3" aria-hidden="true"></span>
+          <button type="button" class="reg-step-node" data-reg-step-jump="4">
+            <span class="reg-step-circle">4</span>
+            <span class="reg-step-name">Surat &amp; Tinjau</span>
+          </button>
+        </nav>
+
+        <form class="reg-form" data-reg-form novalidate>
+          <div class="reg-white-card">
+            <!-- Langkah 1: Informasi Dasar (Terkelompok Rapi) -->
+            <div class="reg-step-pane" data-reg-step="1">
+              <div class="reg-pane-head">
+                <h3>Informasi Dasar</h3>
+                <p>Lengkapi identitas dan kabupaten/kota utusan peserta 2027.</p>
+              </div>
+
+              <div class="reg-section-group">
+                <span class="reg-section-label">Utusan Daerah</span>
+                <div class="reg-grid-2">
+                  <div class="reg-field">
+                    <label>Kelompok Pemilihan <span aria-hidden="true">*</span></label>
+                    <div class="reg-role-pills" role="radiogroup" aria-label="Pilih Kelompok Uda atau Uni">
+                      <label class="reg-role-pill is-selected">
+                        <input type="radio" name="role" value="uda" checked>
+                        <span>Uda (Putra)</span>
+                      </label>
+                      <label class="reg-role-pill">
+                        <input type="radio" name="role" value="uni">
+                        <span>Uni (Putri)</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div class="reg-field">
+                    <label for="reg-region">Kabupaten / Kota Utusan <span aria-hidden="true">*</span></label>
+                    <select id="reg-region" name="region" required>
+                      <option value="">Pilih Kabupaten / Kota...</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="reg-section-group">
+                <span class="reg-section-label">Identitas Peserta</span>
+                <div class="reg-grid-2">
+                  <div class="reg-field reg-field--full">
+                    <label for="reg-fullName">Nama Lengkap <span aria-hidden="true">*</span></label>
+                    <input id="reg-fullName" name="fullName" type="text" placeholder="Contoh: Farhan Maulana, S.H." required>
+                    <small class="reg-field-hint">Tulis nama asli tanpa sapaan Uda/Uni — sistem otomatis menyesuaikan gelar utusan.</small>
+                  </div>
+
+                  <div class="reg-field">
+                    <label for="reg-shortName">Nama Panggilan / Panggung</label>
+                    <input id="reg-shortName" name="shortName" type="text" placeholder="Contoh: Farhan Maulana">
+                  </div>
+
+                  <div class="reg-field">
+                    <label for="reg-age">Usia (Tahun) <span aria-hidden="true">*</span></label>
+                    <input id="reg-age" name="age" type="number" min="17" max="27" placeholder="18–25" required>
+                  </div>
+                </div>
+              </div>
+
+              <div class="reg-section-group">
+                <span class="reg-section-label">Kontak &amp; Latar Belakang</span>
+                <div class="reg-grid-2">
+                  <div class="reg-field">
+                    <label for="reg-phone">Nomor WhatsApp Aktif <span aria-hidden="true">*</span></label>
+                    <input id="reg-phone" name="phone" type="tel" placeholder="08xxxxxxxxxx" required>
+                  </div>
+
+                  <div class="reg-field">
+                    <label for="reg-email">Alamat Email Aktif <span aria-hidden="true">*</span></label>
+                    <input id="reg-email" name="email" type="email" placeholder="nama@email.com" required>
+                  </div>
+
+                  <div class="reg-field">
+                    <label for="reg-education">Pendidikan Terakhir / Kampus <span aria-hidden="true">*</span></label>
+                    <input id="reg-education" name="education" type="text" placeholder="Contoh: S1 Ilmu Komunikasi — Unand" required>
+                  </div>
+
+                  <div class="reg-field">
+                    <label for="reg-profession">Profesi / Aktivitas Saat Ini</label>
+                    <input id="reg-profession" name="profession" type="text" placeholder="Contoh: Mahasiswa / Pegiat Wisata">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Langkah 2: Advokasi, Prestasi Dinamis (+) & Biografi -->
+            <div class="reg-step-pane" data-reg-step="2" hidden>
+              <div class="reg-pane-head">
+                <h3>Advokasi, Prestasi &amp; Profil</h3>
+                <p>Tuliskan fokus advokasi pariwisata, poin prestasi satu per satu, dan biografi singkat Anda.</p>
+              </div>
+
+              <div class="reg-grid-1">
+                <div class="reg-field">
+                  <label for="reg-advocacy">Fokus Advokasi Pariwisata &amp; Budaya <span aria-hidden="true">*</span></label>
+                  <input id="reg-advocacy" name="advocacy" type="text" placeholder="Contoh: Digitalisasi promosi desa wisata dan wastra tenun daerah" required>
+                </div>
+
+                <div class="reg-field">
+                  <div class="reg-field-head-row">
+                    <label>Prestasi Unggulan (Opsional)</label>
+                    <span class="reg-field-hint-inline">Isi 1 poin per baris</span>
+                  </div>
+                  <div class="reg-ach-list" data-reg-achievements-list></div>
+                  <div class="reg-ach-actions">
+                    <button type="button" class="reg-add-btn" data-reg-add-achievement>
+                      <span aria-hidden="true">+</span>
+                      <span>Tambah Poin Prestasi</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div class="reg-field">
+                  <div class="reg-field-head-row">
+                    <label for="reg-bio">Biografi Singkat Peserta <span aria-hidden="true">*</span></label>
+                    <span class="reg-char-counter is-tabular" data-reg-bio-count>0 / min. 20 karakter</span>
+                  </div>
+                  <textarea id="reg-bio" name="bio" rows="4" placeholder="Ceritakan latar belakang, kontribusi daerah, serta visi Anda sebagai Duta Wisata Sumbar 2027..." required></textarea>
+                </div>
+              </div>
+            </div>
+
+            <!-- Langkah 3: Unggah Foto Peserta (>1 Foto: Baju Adat Daerah & Baju Kebesaran) -->
+            <div class="reg-step-pane" data-reg-step="3" hidden>
+              <div class="reg-pane-head">
+                <h3>Unggah Foto Resmi Peserta</h3>
+                <p>Peserta wajib mengunggah lebih dari 1 foto: Foto Baju Adat Daerah dan Foto Baju Kebesaran Duta Wisata.</p>
+              </div>
+
+              <div class="reg-photo-grid">
+                <div class="reg-upload-box">
+                  <div class="reg-upload-box-head">
+                    <strong>1. Foto Baju Adat Daerah <span aria-hidden="true">*</span></strong>
+                    <span class="reg-file-status" data-reg-photo-adat-badge>Wajib</span>
+                  </div>
+                  <p>Potret resmi mengenakan pakaian adat khas kabupaten/kota utusan (rasio 3:4).</p>
+
+                  <div class="reg-photo-preview-box is-clickable" role="button" tabindex="0" aria-label="Pilih atau ganti foto baju adat daerah" data-reg-photo-adat-stage>
+                    <img src="/assets/placeholders/silhouette-uda.svg" alt="Pratinjau foto baju adat daerah" data-reg-photo-adat-preview>
+                    <span class="reg-photo-note" data-reg-photo-adat-note>Klik area ini untuk memilih foto</span>
+                  </div>
+
+                  <div class="reg-photo-actions">
+                    <label class="reg-outline-btn reg-outline-btn--grow">
+                      <span data-reg-photo-adat-btn-label>Pilih Foto Baju Adat</span>
+                      <input type="file" accept="image/*" hidden data-reg-photo-adat-input>
+                    </label>
+                    <button type="button" class="reg-outline-btn reg-outline-btn--danger" data-reg-photo-adat-clear hidden>Hapus</button>
+                  </div>
+                </div>
+
+                <div class="reg-upload-box">
+                  <div class="reg-upload-box-head">
+                    <strong>2. Foto Baju Kebesaran <span aria-hidden="true">*</span></strong>
+                    <span class="reg-file-status" data-reg-photo-kebesaran-badge>Wajib</span>
+                  </div>
+                  <p>Potret resmi mengenakan busana kebesaran / formal Uda &amp; Uni Duta Wisata (rasio 3:4).</p>
+
+                  <div class="reg-photo-preview-box is-clickable" role="button" tabindex="0" aria-label="Pilih atau ganti foto baju kebesaran" data-reg-photo-kebesaran-stage>
+                    <img src="/assets/placeholders/silhouette-uda.svg" alt="Pratinjau foto baju kebesaran" data-reg-photo-kebesaran-preview>
+                    <span class="reg-photo-note" data-reg-photo-kebesaran-note>Klik area ini untuk memilih foto</span>
+                  </div>
+
+                  <div class="reg-photo-actions">
+                    <label class="reg-outline-btn reg-outline-btn--grow">
+                      <span data-reg-photo-kebesaran-btn-label>Pilih Foto Baju Kebesaran</span>
+                      <input type="file" accept="image/*" hidden data-reg-photo-kebesaran-input>
+                    </label>
+                    <button type="button" class="reg-outline-btn reg-outline-btn--danger" data-reg-photo-kebesaran-clear hidden>Hapus</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="reg-extra-photos">
+                <div class="reg-extra-head">
+                  <div>
+                    <strong>Foto Tambahan (Opsional)</strong>
+                    <span>Tambahkan foto close-up atau dokumentasi kegiatan budaya daerah jika diperlukan.</span>
+                  </div>
+                  <label class="reg-outline-btn reg-outline-btn--sm">
+                    <span>+ Tambah Foto Lain</span>
+                    <input type="file" accept="image/*" multiple hidden data-reg-photo-extra-input>
+                  </label>
+                </div>
+                <div class="reg-extra-list" data-reg-photo-extra-list hidden></div>
+              </div>
+            </div>
+
+            <!-- Langkah 4: Surat Rekomendasi Kabupaten/Kota & Tinjau Berkas -->
+            <div class="reg-step-pane" data-reg-step="4" hidden>
+              <div class="reg-pane-head">
+                <h3>Surat Rekomendasi &amp; Tinjau Berkas</h3>
+                <p>Lengkapi detail surat tugas/rekomendasi resmi dari Dinas Pariwisata atau Ikatan Uda Uni Kabupaten/Kota.</p>
+              </div>
+
+              <div class="reg-grid-2">
+                <div class="reg-field">
+                  <label for="reg-recNumber">Nomor Surat Rekomendasi <span aria-hidden="true">*</span></label>
+                  <input id="reg-recNumber" name="recNumber" type="text" placeholder="Contoh: 556/142/DISPAR/2027" required>
+                </div>
+
+                <div class="reg-field">
+                  <label for="reg-recDate">Tanggal Surat <span aria-hidden="true">*</span></label>
+                  <input id="reg-recDate" name="recDate" type="date" required>
+                </div>
+
+                <div class="reg-field reg-field--full">
+                  <label for="reg-recIssuer">Instansi / Lembaga Penerbit <span aria-hidden="true">*</span></label>
+                  <input id="reg-recIssuer" name="recIssuer" type="text" placeholder="Contoh: Dinas Pariwisata Kab. Agam / Ikatan Uda Uni Kota Bukittinggi" required>
+                </div>
+              </div>
+
+              <div class="reg-doc-upload-panel">
+                <div class="reg-upload-box-head">
+                  <strong>Unggah File Surat Rekomendasi <span aria-hidden="true">*</span></strong>
+                  <span class="reg-file-status" data-reg-doc-badge>Wajib · PDF/JPG/PNG</span>
+                </div>
+
+                <div class="reg-doc-drop is-clickable" role="button" tabindex="0" aria-label="Pilih file surat rekomendasi" data-reg-doc-stage>
+                  <div class="reg-doc-meta-light">
+                    <strong data-reg-doc-name>Klik area ini untuk memilih file surat rekomendasi</strong>
+                    <span data-reg-doc-info>Format PDF, JPG, atau PNG · Maksimal 5 MB</span>
+                  </div>
+                  <div class="reg-doc-actions">
+                    <label class="reg-outline-btn reg-outline-btn--sm">
+                      <span data-reg-doc-btn-label>Pilih File Surat</span>
+                      <input type="file" accept=".pdf,application/pdf,image/jpeg,image/png" hidden data-reg-doc-input>
+                    </label>
+                    <button type="button" class="reg-outline-btn reg-outline-btn--sm reg-outline-btn--danger" data-reg-doc-clear hidden>Hapus</button>
+                  </div>
+                </div>
+
+                <p class="reg-privacy-note-light">
+                  Surat rekomendasi dan kontak pribadi hanya dapat diakses oleh Panitia Verifikasi pada Konsol Admin dan tidak ditampilkan ke publik.
+                </p>
+              </div>
+
+              <div class="reg-precheck-box">
+                <span class="reg-section-label">Ringkasan Berkas Siap Kirim</span>
+                <dl class="reg-precheck-grid" data-reg-precheck-summary></dl>
+              </div>
+            </div>
+
+            <p class="reg-form-error-light" data-reg-error hidden role="alert"></p>
+          </div>
+
+          <div class="reg-step-footer">
+            <button type="button" class="reg-btn-prev" data-reg-prev disabled>
+              <span aria-hidden="true">←</span>
+              <span>Sebelumnya</span>
+            </button>
+
+            <span class="reg-step-counter is-tabular" data-reg-step-counter>Langkah 1 dari 4</span>
+
+            <div class="reg-footer-right">
+              <button type="button" class="reg-btn-next" data-reg-next>
+                <span>Selanjutnya</span>
+                <span aria-hidden="true">→</span>
+              </button>
+              <button type="submit" class="reg-btn-next" data-reg-submit hidden>
+                <span>Kirim Pendaftaran 2027</span>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="reg-white-card reg-receipt-light" data-reg-receipt hidden role="status" aria-live="polite">
+          <div class="reg-receipt-hero">
+            <span class="reg-receipt-check" aria-hidden="true">✓</span>
+            <div>
+              <span class="reg-receipt-badge">Pengiriman Berhasil · Pendaftaran 2027</span>
+              <h3>Selamat! Pendaftaran Anda Berhasil Dikirim</h3>
+            </div>
+          </div>
+
+          <p class="reg-receipt-greeting" data-reg-receipt-greeting>
+            Selamat bergabung! Berkas pendaftaran Anda telah resmi diterima sistem Panitia Pemilihan Uda &amp; Uni Duta Wisata Sumatera Barat 2027.
+          </p>
+          <p class="reg-receipt-subnote">
+            Simpan kode registrasi dengan format <code>Nomor-Daerah-Kelompok-Tahun</code> berikut untuk memantau status verifikasi panitia dan keperluan tahap penjurian.
+          </p>
+
+          <div class="reg-code-box-light">
+            <strong class="is-tabular" data-reg-receipt-code>01-KSL-UDA-2027</strong>
+            <button type="button" class="reg-outline-btn reg-outline-btn--sm" data-reg-copy-code>Salin Kode</button>
+          </div>
+
+          <dl class="reg-receipt-summary-light" data-reg-receipt-summary></dl>
+
+          <div class="reg-receipt-actions-light">
+            <button type="button" class="reg-btn-prev" data-reg-reset-form>Daftarkan Peserta Lain</button>
+            <button type="button" class="reg-btn-next" data-reg-go-status>Cek Status Berkas →</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="reg-view" data-reg-panel="status" hidden>
+        <header class="reg-page-head">
+          <h2 class="reg-page-title">Cek Status Berkas 2027</h2>
+          <p class="reg-page-sub">Masukkan nomor urut, kode pendaftaran, daerah, atau nama lengkap Anda.</p>
+        </header>
+
+        <div class="reg-white-card">
+          <form class="reg-lookup-form-light" data-reg-lookup-form>
+            <label class="rw__sr" for="reg-lookup-input">Cari nomor urut, kode pendaftaran, atau nama peserta 2027</label>
+            <input
+              id="reg-lookup-input"
+              type="search"
+              name="query"
+              placeholder="Contoh: 01, 01-KSL-UDA-2027, atau Nama Lengkap..."
+              required
+            >
+            <button type="submit" class="reg-btn-next">Periksa Status</button>
+          </form>
+
+          <div class="reg-lookup-results-light" data-reg-lookup-results>
+            <div class="reg-lookup-empty-light">
+              Masukkan nomor pendaftaran (misal <strong>01</strong> atau <strong>01-KSL-UDA-2027</strong>) untuk memantau hasil verifikasi panitia.
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </dialog>
 

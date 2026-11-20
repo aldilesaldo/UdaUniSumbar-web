@@ -23,6 +23,7 @@ export interface AmbassadorBio {
   achievement: string;
   achievements?: string[];
   photo?: CohortPhoto;
+  sourceRegistrationId?: string;
 }
 
 export interface YearLineup {
@@ -104,11 +105,76 @@ export interface CmsVisiMisiData {
   sealLabel: string;
 }
 
+export type RegistrationStatus = 'pending' | 'revision' | 'approved' | 'rejected';
+
+export interface ExtraRegistrationPhoto {
+  label: string;
+  ref: string;
+}
+
+export interface CmsRegistration2027 {
+  id: string;
+  regCode: string;
+  createdAt: string;
+  updatedAt: string;
+  role: RoleFilter;
+  region: string;
+  fullName: string;
+  shortName: string;
+  age: string;
+  phone: string;
+  email: string;
+  education: string;
+  profession: string;
+  advocacy: string;
+  achievementsText: string;
+  bio: string;
+  photoRef: string;
+  photoAdatRef: string;
+  photoKebesaranRef: string;
+  extraPhotos?: ExtraRegistrationPhoto[];
+  recLetterRef: string;
+  recLetterName: string;
+  recLetterMime: string;
+  recLetterSize: number;
+  recNumber: string;
+  recIssuer: string;
+  recDate: string;
+  status: RegistrationStatus;
+  reviewerNote: string;
+  assignedSlotIndex?: number;
+  finalistNumber?: string;
+}
+
+export interface PublicRegistrationStatusView {
+  regCode: string;
+  fullName: string;
+  role: RoleFilter;
+  region: string;
+  createdAt: string;
+  updatedAt: string;
+  status: RegistrationStatus;
+  reviewerNote: string;
+  finalistNumber?: string;
+  recNumber: string;
+  recIssuer: string;
+  photoCount: number;
+  hasPhoto: boolean;
+  hasRecLetter: boolean;
+}
+
+export interface DocumentUploadResult {
+  refUrl: string;
+  fileName: string;
+  mimeType: string;
+  size: number;
+}
+
 export interface CmsActivityEntry {
   id: string;
   timestamp: string;
   operator: string;
-  module: 'Katalog' | 'Event' | 'Pengurus' | 'Visi & Misi' | 'Sistem';
+  module: 'Katalog' | 'Event' | 'Pengurus' | 'Visi & Misi' | 'Pendaftar 2027' | 'Sistem';
   action: string;
   summary: string;
 }
@@ -121,6 +187,7 @@ export interface CmsState {
   boardSummary: CmsBoardSummaryItem[];
   boardMembers: CmsBoardMember[];
   visimisi: CmsVisiMisiData;
+  registrations2027: CmsRegistration2027[];
   activityLog: CmsActivityEntry[];
 }
 
@@ -138,6 +205,7 @@ export interface CompressedUploadResult {
   width: number;
   height: number;
   mimeType: string;
+  hasTransparency?: boolean;
 }
 
 export const SUMBAR_REGIONS = [
@@ -315,137 +383,139 @@ const PHOTOS_2024_BY_ROLE: Record<RoleFilter, Record<string, CohortPhoto>> = {
   },
 };
 
+const PHOTO_2022_VER = '?v=2022-r2';
+
 const PHOTOS_2022_BY_ROLE: Record<RoleFilter, Record<string, CohortPhoto>> = {
   uda: {
     'Kab. Dharmasraya': {
-      thumb: '/assets/uda-uni-2022/uda-dharmasraya-640.webp',
-      full: '/assets/uda-uni-2022/uda-dharmasraya-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-dharmasraya-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-dharmasraya-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Solok': {
-      thumb: '/assets/uda-uni-2022/uda-solok-640.webp',
-      full: '/assets/uda-uni-2022/uda-solok-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-solok-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-solok-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Lima Puluh Kota': {
-      thumb: '/assets/uda-uni-2022/uda-lima-puluh-kota-640.webp',
-      full: '/assets/uda-uni-2022/uda-lima-puluh-kota-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-lima-puluh-kota-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-lima-puluh-kota-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Pasaman': {
-      thumb: '/assets/uda-uni-2022/uda-pasaman-640.webp',
-      full: '/assets/uda-uni-2022/uda-pasaman-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-pasaman-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-pasaman-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Solok': {
-      thumb: '/assets/uda-uni-2022/uda-kabupaten-solok-640.webp',
-      full: '/assets/uda-uni-2022/uda-kabupaten-solok-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-kabupaten-solok-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-kabupaten-solok-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Sijunjung': {
-      thumb: '/assets/uda-uni-2022/uda-sijunjung-640.webp',
-      full: '/assets/uda-uni-2022/uda-sijunjung-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-sijunjung-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-sijunjung-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Solok Selatan': {
-      thumb: '/assets/uda-uni-2022/uda-solok-selatan-640.webp',
-      full: '/assets/uda-uni-2022/uda-solok-selatan-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-solok-selatan-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-solok-selatan-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Bukittinggi': {
-      thumb: '/assets/uda-uni-2022/uda-bukittinggi-640.webp',
-      full: '/assets/uda-uni-2022/uda-bukittinggi-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-bukittinggi-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-bukittinggi-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Sawahlunto': {
-      thumb: '/assets/uda-uni-2022/uda-sawahlunto-640.webp',
-      full: '/assets/uda-uni-2022/uda-sawahlunto-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-sawahlunto-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-sawahlunto-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Padang': {
-      thumb: '/assets/uda-uni-2022/uda-padang-640.webp',
-      full: '/assets/uda-uni-2022/uda-padang-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-padang-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-padang-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Pesisir Selatan': {
-      thumb: '/assets/uda-uni-2022/uda-pesisir-selatan-640.webp',
-      full: '/assets/uda-uni-2022/uda-pesisir-selatan-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-pesisir-selatan-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-pesisir-selatan-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Agam': {
-      thumb: '/assets/uda-uni-2022/uda-agam-640.webp',
-      full: '/assets/uda-uni-2022/uda-agam-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-agam-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-agam-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Tanah Datar': {
-      thumb: '/assets/uda-uni-2022/uda-tanah-datar-640.webp',
-      full: '/assets/uda-uni-2022/uda-tanah-datar-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-tanah-datar-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-tanah-datar-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Padang Pariaman': {
-      thumb: '/assets/uda-uni-2022/uda-padang-pariaman-640.webp',
-      full: '/assets/uda-uni-2022/uda-padang-pariaman-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-padang-pariaman-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-padang-pariaman-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Kep. Mentawai': {
-      thumb: '/assets/uda-uni-2022/uda-mentawai-640.webp',
-      full: '/assets/uda-uni-2022/uda-mentawai-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-mentawai-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-mentawai-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Payakumbuh': {
-      thumb: '/assets/uda-uni-2022/uda-payakumbuh-640.webp',
-      full: '/assets/uda-uni-2022/uda-payakumbuh-1080.webp',
+      thumb: `/assets/uda-uni-2022/uda-payakumbuh-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uda-payakumbuh-1080.webp${PHOTO_2022_VER}`,
     },
   },
   uni: {
     'Kab. Dharmasraya': {
-      thumb: '/assets/uda-uni-2022/uni-dharmasraya-640.webp',
-      full: '/assets/uda-uni-2022/uni-dharmasraya-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-dharmasraya-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-dharmasraya-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Solok': {
-      thumb: '/assets/uda-uni-2022/uni-solok-640.webp',
-      full: '/assets/uda-uni-2022/uni-solok-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-solok-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-solok-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Lima Puluh Kota': {
-      thumb: '/assets/uda-uni-2022/uni-lima-puluh-kota-640.webp',
-      full: '/assets/uda-uni-2022/uni-lima-puluh-kota-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-lima-puluh-kota-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-lima-puluh-kota-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Pasaman': {
-      thumb: '/assets/uda-uni-2022/uni-pasaman-640.webp',
-      full: '/assets/uda-uni-2022/uni-pasaman-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-pasaman-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-pasaman-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Solok': {
-      thumb: '/assets/uda-uni-2022/uni-kabupaten-solok-640.webp',
-      full: '/assets/uda-uni-2022/uni-kabupaten-solok-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-kabupaten-solok-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-kabupaten-solok-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Sijunjung': {
-      thumb: '/assets/uda-uni-2022/uni-sijunjung-640.webp',
-      full: '/assets/uda-uni-2022/uni-sijunjung-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-sijunjung-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-sijunjung-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Solok Selatan': {
-      thumb: '/assets/uda-uni-2022/uni-solok-selatan-640.webp',
-      full: '/assets/uda-uni-2022/uni-solok-selatan-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-solok-selatan-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-solok-selatan-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Bukittinggi': {
-      thumb: '/assets/uda-uni-2022/uni-bukittinggi-640.webp',
-      full: '/assets/uda-uni-2022/uni-bukittinggi-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-bukittinggi-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-bukittinggi-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Sawahlunto': {
-      thumb: '/assets/uda-uni-2022/uni-sawahlunto-640.webp',
-      full: '/assets/uda-uni-2022/uni-sawahlunto-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-sawahlunto-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-sawahlunto-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Padang': {
-      thumb: '/assets/uda-uni-2022/uni-padang-640.webp',
-      full: '/assets/uda-uni-2022/uni-padang-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-padang-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-padang-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Pesisir Selatan': {
-      thumb: '/assets/uda-uni-2022/uni-pesisir-selatan-640.webp',
-      full: '/assets/uda-uni-2022/uni-pesisir-selatan-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-pesisir-selatan-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-pesisir-selatan-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Agam': {
-      thumb: '/assets/uda-uni-2022/uni-agam-640.webp',
-      full: '/assets/uda-uni-2022/uni-agam-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-agam-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-agam-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Tanah Datar': {
-      thumb: '/assets/uda-uni-2022/uni-tanah-datar-640.webp',
-      full: '/assets/uda-uni-2022/uni-tanah-datar-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-tanah-datar-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-tanah-datar-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Padang Pariaman': {
-      thumb: '/assets/uda-uni-2022/uni-padang-pariaman-640.webp',
-      full: '/assets/uda-uni-2022/uni-padang-pariaman-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-padang-pariaman-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-padang-pariaman-1080.webp${PHOTO_2022_VER}`,
     },
     'Kab. Kep. Mentawai': {
-      thumb: '/assets/uda-uni-2022/uni-mentawai-640.webp',
-      full: '/assets/uda-uni-2022/uni-mentawai-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-mentawai-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-mentawai-1080.webp${PHOTO_2022_VER}`,
     },
     'Kota Payakumbuh': {
-      thumb: '/assets/uda-uni-2022/uni-payakumbuh-640.webp',
-      full: '/assets/uda-uni-2022/uni-payakumbuh-1080.webp',
+      thumb: `/assets/uda-uni-2022/uni-payakumbuh-640.webp${PHOTO_2022_VER}`,
+      full: `/assets/uda-uni-2022/uni-payakumbuh-1080.webp${PHOTO_2022_VER}`,
     },
   },
 };
@@ -1276,12 +1346,33 @@ export function getRegionalHonorific(role: RoleFilter, region: string): string {
   return role === 'uda' ? 'Uda' : 'Uni';
 }
 
+export function toTitleCaseLive(raw: string): string {
+  const str = String(raw ?? '');
+  if (!str) return '';
+  return str.replace(
+    /(^|[\s\-/(".])(\p{L})/gu,
+    (_m, sep: string, ch: string) => sep + ch.toUpperCase(),
+  );
+}
+
+export function toTitleCaseWords(raw: string): string {
+  const str = String(raw ?? '').trim();
+  if (!str) return '';
+  const letters = str.replace(/[^\p{L}]/gu, '');
+  const isAllUpper = letters.length > 4 && letters === letters.toUpperCase();
+  const base = isAllUpper ? str.toLowerCase() : str;
+  return base.replace(
+    /(^|[\s\-/(".])(\p{L})/gu,
+    (_m, sep: string, ch: string) => sep + ch.toUpperCase(),
+  );
+}
+
 export function formatParticipantNameWithHonorific(
   rawName: string,
   role: RoleFilter,
   region: string,
 ): string {
-  const trimmed = rawName.trim();
+  const trimmed = toTitleCaseWords(rawName);
   if (!trimmed) return trimmed;
   const stripped = trimmed.replace(/^(?:uda|uni|bujang|gadih|cik\s+ajo|cik\s+uniang)\s+/i, '').trim();
   const prefix = getRegionalHonorific(role, region);
@@ -1832,7 +1923,7 @@ function buildDefaultVisiMisi(): CmsVisiMisiData {
   };
 }
 
-const CMS_SCHEMA_VERSION = 7;
+const CMS_SCHEMA_VERSION = 13;
 
 export function createDefaultCmsState(): CmsState {
   return {
@@ -1843,6 +1934,7 @@ export function createDefaultCmsState(): CmsState {
     boardSummary: buildDefaultBoardSummary(),
     boardMembers: buildDefaultBoardMembers(),
     visimisi: buildDefaultVisiMisi(),
+    registrations2027: [],
     activityLog: [
       {
         id: 'log-seed-init',
@@ -1869,30 +1961,57 @@ const listeners = new Set<(state: CmsState) => void>();
 
 let cachedState: CmsState | null = null;
 let idbPromise: Promise<IDBDatabase | null> | null = null;
+let draftPreviewYear: string | null = null;
+
+export function getDraftPreviewYear(): string | null {
+  return draftPreviewYear;
+}
+
+export function setDraftPreviewYear(year: string | null): void {
+  const nextYear = year ? year.trim() : null;
+  if (draftPreviewYear === nextYear) return;
+  draftPreviewYear = nextYear;
+  notifyCmsChange(loadCmsState());
+}
 
 function cloneJson<T>(data: T): T {
   return JSON.parse(JSON.stringify(data)) as T;
 }
 
+function isPlaceholderCatalogEntry(p: AmbassadorBio): boolean {
+  if (p.sourceRegistrationId) return false;
+  if (p.photo?.thumb) return false;
+  const name = (p.shortName || p.fullName || '').trim();
+  return /^(?:uda|uni|bujang|gadih|cik\s+ajo|cik\s+uniang)\s+utusan\s+/i.test(name);
+}
+
+function reindexCatalogList(list: AmbassadorBio[], role: RoleFilter): AmbassadorBio[] {
+  return list.map((p, idx) => ({
+    ...p,
+    role,
+    slotIndex: idx,
+  }));
+}
+
 function mergeCatalogDefaults(savedYears: YearLineup[] | undefined, defaults: YearLineup[]): YearLineup[] {
   if (!Array.isArray(savedYears) || savedYears.length === 0) return defaults;
-  return savedYears
-    .filter((y) => y && typeof y.year === 'string' && Array.isArray(y.uda) && Array.isArray(y.uni))
+  const cleaned = savedYears
+    .filter(
+      (y) =>
+        y &&
+        typeof y.year === 'string' &&
+        /^\d{4}$/.test(y.year.trim()) &&
+        Array.isArray(y.uda) &&
+        Array.isArray(y.uni),
+    )
     .map((y) => ({
-      year: y.year,
+      year: y.year.trim(),
       status: (y.status === 'draft' ? 'draft' : 'published') as PublishStatus,
-      uda: y.uda.map((p, idx) => ({
-        ...p,
-        role: 'uda' as const,
-        slotIndex: typeof p.slotIndex === 'number' ? p.slotIndex : idx,
-      })),
-      uni: y.uni.map((p, idx) => ({
-        ...p,
-        role: 'uni' as const,
-        slotIndex: typeof p.slotIndex === 'number' ? p.slotIndex : idx,
-      })),
+      uda: reindexCatalogList(y.uda, 'uda'),
+      uni: reindexCatalogList(y.uni, 'uni'),
     }))
     .sort((a, b) => Number(b.year) - Number(a.year));
+  return cleaned.length > 0 ? cleaned : defaults;
 }
 
 export function loadCmsState(): CmsState {
@@ -1980,6 +2099,163 @@ export function loadCmsState(): CmsState {
         migrated = true;
       }
     }
+    if (savedVersion < 9) {
+      const year2022 = catalogYears.find((y) => y.year === '2022');
+      if (year2022) {
+        for (const p of [...year2022.uda, ...year2022.uni]) {
+          const cohortPhoto = getCohortPhoto('2022', p.role, p.region);
+          if (cohortPhoto) {
+            p.photo = cohortPhoto;
+            migrated = true;
+          }
+        }
+      } else {
+        const official2022 = defaults.catalogYears.find((y) => y.year === '2022');
+        if (official2022) {
+          catalogYears = [...catalogYears, official2022].sort((a, b) => Number(b.year) - Number(a.year));
+          migrated = true;
+        }
+      }
+    }
+    if (savedVersion < 10) {
+      const official2024 = defaults.catalogYears.find((y) => y.year === '2024');
+      const existing2024 = catalogYears.find((y) => y.year === '2024');
+      if (!existing2024 || existing2024.uda.length === 0 || existing2024.uni.length === 0) {
+        if (official2024) {
+          const without2024 = catalogYears.filter((y) => y.year !== '2024');
+          catalogYears = [...without2024, official2024].sort((a, b) => Number(b.year) - Number(a.year));
+          migrated = true;
+        }
+      } else {
+        if (existing2024.status !== 'published') {
+          existing2024.status = 'published';
+          migrated = true;
+        }
+        for (const p of [...existing2024.uda, ...existing2024.uni]) {
+          const isCustomUpload = Boolean(p.photo?.thumb?.startsWith('cms-media://'));
+          if (!isCustomUpload) {
+            const cohortPhoto = getCohortPhoto('2024', p.role, p.region);
+            if (cohortPhoto && (p.photo?.thumb !== cohortPhoto.thumb || p.photo?.full !== cohortPhoto.full)) {
+              p.photo = cohortPhoto;
+              migrated = true;
+            }
+          }
+        }
+      }
+      catalogYears = [...catalogYears].sort((a, b) => Number(b.year) - Number(a.year));
+    }
+
+    const registrations2027 = Array.isArray(parsed.registrations2027) ? parsed.registrations2027 : [];
+
+    if (savedVersion < 11) {
+      for (const yr of catalogYears) {
+        if (yr.year === '2024' || yr.year === '2022') continue;
+        const prevUdaLen = yr.uda.length;
+        const prevUniLen = yr.uni.length;
+        yr.uda = reindexCatalogList(
+          yr.uda.filter((p) => !isPlaceholderCatalogEntry(p)),
+          'uda',
+        );
+        yr.uni = reindexCatalogList(
+          yr.uni.filter((p) => !isPlaceholderCatalogEntry(p)),
+          'uni',
+        );
+        if (yr.uda.length !== prevUdaLen || yr.uni.length !== prevUniLen) {
+          migrated = true;
+          if (yr.uda.length === 0 || yr.uni.length === 0) {
+            yr.status = 'draft';
+          }
+        }
+        if (yr.year === '2027') {
+          for (const r of registrations2027) {
+            if (r.status !== 'approved') continue;
+            const roleList = r.role === 'uda' ? yr.uda : yr.uni;
+            const matchIdx = roleList.findIndex(
+              (p) =>
+                p.sourceRegistrationId === r.id ||
+                (p.fullName.toLowerCase() === r.fullName.toLowerCase() &&
+                  p.region.toLowerCase() === r.region.toLowerCase()),
+            );
+            if (matchIdx >= 0) {
+              roleList[matchIdx].sourceRegistrationId = r.id;
+              r.assignedSlotIndex = matchIdx;
+              migrated = true;
+            }
+          }
+        }
+      }
+    }
+
+    if (savedVersion < 12) {
+      for (const r of registrations2027) {
+        const nextCode = normalizeRegistrationCodeTwoDigits(r.regCode);
+        if (nextCode !== r.regCode) {
+          r.regCode = nextCode;
+          migrated = true;
+        }
+        if (r.finalistNumber) {
+          const nextFin = normalizeTwoDigitFinalistNumber(r.finalistNumber);
+          if (nextFin !== r.finalistNumber) {
+            r.finalistNumber = nextFin;
+            migrated = true;
+          }
+        }
+      }
+      for (const yr of catalogYears) {
+        for (const p of [...yr.uda, ...yr.uni]) {
+          if (p.finalistNumber) {
+            const nextFin = normalizeTwoDigitFinalistNumber(p.finalistNumber);
+            if (nextFin !== p.finalistNumber) {
+              if (p.titleBadge) {
+                p.titleBadge = p.titleBadge.replace(
+                  new RegExp(`Finalis No\\.\\s*${p.finalistNumber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'i'),
+                  `Finalis No. ${nextFin}`,
+                );
+              }
+              p.finalistNumber = nextFin;
+              migrated = true;
+            }
+          }
+        }
+      }
+    }
+
+    if (savedVersion < 13) {
+      for (const r of registrations2027) {
+        r.fullName = formatParticipantNameWithHonorific(r.fullName, r.role, r.region);
+        r.shortName = formatParticipantNameWithHonorific(r.shortName || r.fullName, r.role, r.region);
+        r.email = r.email.trim().toLowerCase();
+        r.education = toTitleCaseWords(r.education);
+        r.profession = toTitleCaseWords(r.profession);
+        r.advocacy = toTitleCaseWords(r.advocacy);
+        r.achievementsText = r.achievementsText
+          .split(/\r?\n/)
+          .map((l) => toTitleCaseWords(l))
+          .filter(Boolean)
+          .join('\n');
+        r.bio = toTitleCaseWords(r.bio);
+        r.recIssuer = toTitleCaseWords(r.recIssuer);
+        r.recNumber = toTitleCaseWords(r.recNumber);
+        migrated = true;
+      }
+      for (const yr of catalogYears) {
+        if (yr.year === '2024' || yr.year === '2022') continue;
+        for (const p of [...yr.uda, ...yr.uni]) {
+          p.fullName = formatParticipantNameWithHonorific(p.fullName, p.role, p.region);
+          p.shortName = formatParticipantNameWithHonorific(p.shortName || p.fullName, p.role, p.region);
+          p.rankLabel = toTitleCaseWords(p.rankLabel);
+          p.education = toTitleCaseWords(p.education);
+          p.profession = toTitleCaseWords(p.profession);
+          p.advocacy = toTitleCaseWords(p.advocacy);
+          p.achievement = toTitleCaseWords(p.achievement);
+          if (Array.isArray(p.achievements)) {
+            p.achievements = p.achievements.map((a) => toTitleCaseWords(a)).filter(Boolean);
+          }
+          p.bio = toTitleCaseWords(p.bio);
+          migrated = true;
+        }
+      }
+    }
 
     cachedState = {
       version: CMS_SCHEMA_VERSION,
@@ -2001,6 +2277,7 @@ export function loadCmsState(): CmsState {
         parsed.visimisi && typeof parsed.visimisi === 'object'
           ? {...defaults.visimisi, ...parsed.visimisi}
           : defaults.visimisi,
+      registrations2027,
       activityLog: Array.isArray(parsed.activityLog) ? parsed.activityLog.slice(0, 80) : defaults.activityLog,
     };
 
@@ -2075,8 +2352,144 @@ export function saveCmsState(
 
 export function getPublishedCatalogYears(): YearLineup[] {
   const state = loadCmsState();
-  const published = state.catalogYears.filter((y) => y.status !== 'draft');
-  return published.length > 0 ? published : state.catalogYears;
+  const published = state.catalogYears.filter(
+    (y) =>
+      (y.status !== 'draft' || (draftPreviewYear !== null && y.year === draftPreviewYear)) &&
+      y.uda.length > 0 &&
+      y.uni.length > 0,
+  );
+  if (published.length > 0) return published;
+  const nonEmpty = state.catalogYears.filter((y) => y.uda.length > 0 && y.uni.length > 0);
+  return nonEmpty.length > 0 ? nonEmpty : state.catalogYears;
+}
+
+export function publishCatalogYear(
+  yearStr: string,
+  operatorName?: string,
+): {ok: true; year: YearLineup} | {ok: false; error: string} {
+  const next = cloneJson(loadCmsState());
+  const target = next.catalogYears.find((y) => y.year === yearStr);
+  if (!target) return {ok: false, error: `Angkatan ${yearStr} tidak ditemukan.`};
+  if (target.uda.length === 0 || target.uni.length === 0) {
+    const missing =
+      target.uda.length === 0 && target.uni.length === 0
+        ? 'Uda dan Uni'
+        : target.uda.length === 0
+          ? 'Uda'
+          : 'Uni';
+    return {
+      ok: false,
+      error: `Angkatan ${yearStr} belum bisa ditayangkan: daftar ${missing} masih kosong.`,
+    };
+  }
+  target.status = 'published';
+  if (draftPreviewYear === yearStr) {
+    draftPreviewYear = null;
+  }
+  saveCmsState(next, {
+    operator: operatorName,
+    module: 'Katalog',
+    action: 'Tayangkan Angkatan',
+    summary: `Angkatan ${target.year} (${target.uda.length} Uda · ${target.uni.length} Uni) → Tayang di Hero Section.`,
+  });
+  return {ok: true, year: target};
+}
+
+function syncApprovedRegistrationSlotIndices(state: CmsState, yearStr: string, role: RoleFilter): void {
+  if (yearStr !== '2027') return;
+  const yr = state.catalogYears.find((y) => y.year === '2027');
+  if (!yr) return;
+  const list = yr[role];
+  for (const reg of state.registrations2027 || []) {
+    if (reg.role !== role || reg.status !== 'approved') continue;
+    const idx = list.findIndex((p) => p.sourceRegistrationId === reg.id);
+    if (idx >= 0) reg.assignedSlotIndex = idx;
+  }
+}
+
+export function reorderCatalogParticipant(
+  yearStr: string,
+  role: RoleFilter,
+  fromIdx: number,
+  toIdx: number,
+  operatorName?: string,
+): number {
+  const next = cloneJson(loadCmsState());
+  const yr = next.catalogYears.find((y) => y.year === yearStr);
+  if (!yr) return fromIdx;
+  const list = yr[role];
+  if (fromIdx < 0 || fromIdx >= list.length) return fromIdx;
+  const clampedTo = Math.max(0, Math.min(list.length - 1, toIdx));
+  if (clampedTo === fromIdx) return fromIdx;
+
+  const [moved] = list.splice(fromIdx, 1);
+  list.splice(clampedTo, 0, moved);
+  yr[role] = reindexCatalogList(list, role);
+  syncApprovedRegistrationSlotIndices(next, yearStr, role);
+
+  saveCmsState(next, {
+    operator: operatorName,
+    module: 'Katalog',
+    action: 'Ubah Urutan Katalog',
+    summary: `${moved.shortName} (${yearStr}) dipindahkan ke urutan #${clampedTo + 1}.`,
+  });
+  return clampedTo;
+}
+
+export function sortCatalogByFinalistNumber(
+  yearStr: string,
+  role: RoleFilter,
+  operatorName?: string,
+): boolean {
+  const next = cloneJson(loadCmsState());
+  const yr = next.catalogYears.find((y) => y.year === yearStr);
+  if (!yr) return false;
+  const list = yr[role];
+  if (list.length < 2) return false;
+
+  const parseFin = (p: AmbassadorBio): number => {
+    const digits = (p.finalistNumber || '').replace(/\D+/g, '');
+    return digits ? Number(digits) : Number.MAX_SAFE_INTEGER;
+  };
+
+  yr[role] = reindexCatalogList(
+    [...list].sort((a, b) => {
+      const diff = parseFin(a) - parseFin(b);
+      if (diff !== 0) return diff;
+      return a.shortName.localeCompare(b.shortName, 'id');
+    }),
+    role,
+  );
+  syncApprovedRegistrationSlotIndices(next, yearStr, role);
+
+  saveCmsState(next, {
+    operator: operatorName,
+    module: 'Katalog',
+    action: 'Urutkan No. Finalis',
+    summary: `Daftar ${role === 'uda' ? 'Uda' : 'Uni'} angkatan ${yearStr} diurutkan berdasarkan nomor finalis.`,
+  });
+  return true;
+}
+
+export function exportCatalogYearPackageJson(yearStr: string): string {
+  const state = loadCmsState();
+  const yr = state.catalogYears.find((y) => y.year === yearStr);
+  if (!yr) return JSON.stringify({error: `Angkatan ${yearStr} tidak ditemukan.`}, null, 2);
+  const payload = {
+    schema: 'uda-uni-sumbar-cohort-release-v1',
+    exportedAt: new Date().toISOString(),
+    year: yr.year,
+    status: yr.status,
+    summary: {
+      udaCount: yr.uda.length,
+      uniCount: yr.uni.length,
+      totalCount: yr.uda.length + yr.uni.length,
+      regions: Array.from(new Set([...yr.uda, ...yr.uni].map((p) => p.region).filter(Boolean))),
+    },
+    uda: yr.uda,
+    uni: yr.uni,
+  };
+  return JSON.stringify(payload, null, 2);
 }
 
 export function getPublishedEvents(): CmsEventItem[] {
@@ -2091,35 +2504,37 @@ export function getPublishedBoardMembers(): CmsBoardMember[] {
   return published.length > 0 ? published : state.boardMembers;
 }
 
-export function createTemplateYearLineup(yearStr: string, status: PublishStatus = 'published'): YearLineup {
-  const buildSlots = (role: RoleFilter): AmbassadorBio[] =>
-    SUMBAR_REGIONS.map((region, idx) => {
-      const prefix = role === 'uda' ? 'Uda' : 'Uni';
-      const honorific = getRegionalHonorific(role, region);
-      const rank = RANK_LABELS[idx] ?? 'Utusan';
-      const rankLabel = idx === 0 ? `${prefix} Utama` : `${prefix} ${rank}`;
-      const shortName = `${honorific} Utusan ${region.replace(/^(Kota|Kab\.)\s+/, '')}`;
-      return {
-        role,
-        slotIndex: idx,
-        rankLabel,
-        fullName: shortName,
-        shortName,
-        titleBadge: `${rankLabel} Duta Wisata Sumbar ${yearStr}`,
-        region,
-        education: 'Sarjana — Perguruan Tinggi',
-        profession: `${rankLabel} Sumatera Barat ${yearStr} · Duta Wisata ${region}`,
-        bio: `Delegasi resmi ${region} pada Pemilihan Uda & Uni Duta Wisata Provinsi Sumatera Barat angkatan ${yearStr}.`,
-        advocacy: `Promosi destinasi wisata unggulan dan pelestarian budaya di ${region}.`,
-        achievement: `${rankLabel} Duta Wisata Sumatera Barat ${yearStr} · Utusan ${region}`,
-      };
-    });
-
+export function createTemplateYearLineup(yearStr: string, status: PublishStatus = 'draft'): YearLineup {
   return {
     year: yearStr,
     status,
-    uda: buildSlots('uda'),
-    uni: buildSlots('uni'),
+    uda: [],
+    uni: [],
+  };
+}
+
+export function createEmptyCatalogParticipant(
+  yearStr: string,
+  role: RoleFilter,
+  slotIndex: number,
+  region: string = SUMBAR_REGIONS[0],
+): AmbassadorBio {
+  const honorific = getRegionalHonorific(role, region);
+  const rankLabel = `Finalis ${yearStr}`;
+  const defaultName = `${honorific} Finalis Baru`;
+  return {
+    role,
+    slotIndex,
+    rankLabel,
+    fullName: defaultName,
+    shortName: defaultName,
+    titleBadge: `${rankLabel} · Utusan ${region}`,
+    region,
+    education: '',
+    profession: `Finalis Duta Wisata Sumbar ${yearStr} · Utusan ${region}`,
+    bio: '',
+    advocacy: '',
+    achievement: '',
   };
 }
 
@@ -2178,7 +2593,7 @@ export function createEmptyBoardMember(): CmsBoardMember {
 }
 
 export function resetCmsModule(
-  module: 'catalog' | 'events' | 'board' | 'visimisi' | 'all',
+  module: 'catalog' | 'events' | 'board' | 'visimisi' | 'registrations' | 'all',
   operatorName?: string,
 ): CmsState {
   const defaults = createDefaultCmsState();
@@ -2219,6 +2634,15 @@ export function resetCmsModule(
       module: 'Visi & Misi',
       action: 'Reset Modul',
       summary: 'Mengembalikan data Visi, Misi, Sebaran & Sapta Pesona ke data bawaan.',
+    });
+  }
+  if (module === 'registrations') {
+    current.registrations2027 = [];
+    return saveCmsState(current, {
+      operator: operatorName,
+      module: 'Pendaftar 2027',
+      action: 'Reset Modul',
+      summary: 'Mengosongkan daftar berkas pendaftaran peserta 2027 lokal.',
     });
   }
 
@@ -2317,6 +2741,7 @@ export function importCmsBackupJson(
         parsed.visimisi && typeof parsed.visimisi === 'object'
           ? {...defaults.visimisi, ...parsed.visimisi}
           : defaults.visimisi,
+      registrations2027: Array.isArray(parsed.registrations2027) ? parsed.registrations2027 : [],
       activityLog: Array.isArray(parsed.activityLog) ? parsed.activityLog : [],
     };
     const saved = saveCmsState(merged, {
@@ -2471,11 +2896,34 @@ export async function saveCompressedAdminImage(
     ctx.imageSmoothingQuality = 'high';
     decoded.draw(ctx, outW, outH);
 
+    let hasTransparency = false;
+    try {
+      const samplePts: Array<[number, number]> = [
+        [0, 0],
+        [outW - 1, 0],
+        [0, outH - 1],
+        [outW - 1, outH - 1],
+        [Math.floor(outW * 0.5), 0],
+        [0, Math.floor(outH * 0.35)],
+        [outW - 1, Math.floor(outH * 0.35)],
+      ];
+      for (const [sx, sy] of samplePts) {
+        const alpha = ctx.getImageData(sx, sy, 1, 1).data[3];
+        if (alpha < 245) {
+          hasTransparency = true;
+          break;
+        }
+      }
+    } catch {
+      hasTransparency = false;
+    }
+
     // Keep alpha channel intact with WebP; preserve lossless PNG transparency if PNG is already compact
     let mimeType = 'image/webp';
     let blob = await canvasToBlob(canvas, 'image/webp', 0.82);
     if (!blob || blob.size === 0) {
       mimeType = 'image/jpeg';
+      hasTransparency = false;
       ctx.globalCompositeOperation = 'destination-over';
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(0, 0, outW, outH);
@@ -2508,10 +2956,578 @@ export async function saveCompressedAdminImage(
       width: outW,
       height: outH,
       mimeType,
+      hasTransparency,
     };
   } finally {
     decoded.cleanup();
   }
+}
+
+const ALLOWED_DOC_MIMES = new Set(['application/pdf', 'image/jpeg', 'image/jpg', 'image/png']);
+const MAX_DOC_BYTES = 5 * 1024 * 1024;
+
+export async function saveRegistrationDocument(file: File): Promise<DocumentUploadResult> {
+  const mimeLower = (file.type || '').toLowerCase();
+  const extLower = file.name.toLowerCase().split('.').pop() || '';
+  const extAllowed = extLower === 'pdf' || extLower === 'jpg' || extLower === 'jpeg' || extLower === 'png';
+
+  if (!ALLOWED_DOC_MIMES.has(mimeLower) && !extAllowed) {
+    throw new Error('Surat rekomendasi harus berformat PDF, JPG, atau PNG.');
+  }
+  if (file.size <= 0) {
+    throw new Error('File surat rekomendasi kosong atau tidak valid.');
+  }
+  if (file.size > MAX_DOC_BYTES) {
+    throw new Error('Ukuran file surat rekomendasi maksimal 5 MB.');
+  }
+
+  const normalizedMime =
+    mimeLower ||
+    (extLower === 'pdf' ? 'application/pdf' : extLower === 'png' ? 'image/png' : 'image/jpeg');
+
+  const docKey = `cms-doc://rec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const db = await openMediaDb();
+  if (!db) {
+    throw new Error('Browser tidak mendukung penyimpanan dokumen lokal (IndexedDB).');
+  }
+
+  await new Promise<void>((resolve, reject) => {
+    const tx = db.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(file, docKey);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(new Error('Gagal menyimpan surat rekomendasi ke IndexedDB.'));
+  });
+
+  const objectUrl = URL.createObjectURL(file);
+  resolvedMediaUrls.set(docKey, objectUrl);
+
+  return {
+    refUrl: docKey,
+    fileName: file.name,
+    mimeType: normalizedMime,
+    size: file.size,
+  };
+}
+
+export function resolveCmsDocumentUrl(src: string | undefined): string {
+  if (!src) return '';
+  if (src.startsWith('cms-doc://') || src.startsWith('cms-media://')) {
+    return resolvedMediaUrls.get(src) ?? '';
+  }
+  return src;
+}
+
+/* ============================================================================
+ * 2027 Participant Registration & Admin Verification Helpers
+ * ============================================================================ */
+
+const REGION_CODE_MAP: Record<string, string> = {
+  'Kota Padang': 'PDG',
+  'Kota Bukittinggi': 'BKT',
+  'Kota Payakumbuh': 'PYK',
+  'Kota Padang Panjang': 'PDP',
+  'Kota Pariaman': 'PRM',
+  'Kota Sawahlunto': 'SWL',
+  'Kota Solok': 'SLK',
+  'Kab. Agam': 'AGM',
+  'Kab. Tanah Datar': 'TDT',
+  'Kab. Lima Puluh Kota': 'LPK',
+  'Kab. Padang Pariaman': 'PPR',
+  'Kab. Pesisir Selatan': 'PSE',
+  'Kab. Solok': 'KSL',
+  'Kab. Solok Selatan': 'SLS',
+  'Kab. Sijunjung': 'SJJ',
+  'Kab. Dharmasraya': 'DHR',
+  'Kab. Pasaman': 'PSM',
+  'Kab. Pasaman Barat': 'PSB',
+  'Kab. Kep. Mentawai': 'MTW',
+};
+
+function getRegionShortCode(region: string): string {
+  const trimmed = region.trim();
+  const exact = REGION_CODE_MAP[trimmed];
+  if (exact) return exact;
+  const matched = Object.entries(REGION_CODE_MAP).find(
+    ([name]) => name.toLowerCase() === trimmed.toLowerCase(),
+  );
+  if (matched) return matched[1];
+  const cleaned = trimmed
+    .replace(/^(Kota|Kab\.)\s+/i, '')
+    .replace(/Kep\.\s+/i, '')
+    .replace(/[^A-Za-z]/g, '')
+    .toUpperCase();
+  return (cleaned.slice(0, 3) || 'SUM').padEnd(3, 'X');
+}
+
+export function normalizeTwoDigitFinalistNumber(raw: string): string {
+  const trimmed = raw.trim();
+  if (!trimmed) return '';
+  if (/^\d+$/.test(trimmed)) {
+    const n = Number.parseInt(trimmed, 10);
+    if (Number.isFinite(n) && n > 0) {
+      return String(n).padStart(2, '0');
+    }
+  }
+  const prefixed = /^([A-Za-z]+)-0*(\d+)$/.exec(trimmed);
+  if (prefixed) {
+    const n = Number.parseInt(prefixed[2], 10);
+    if (Number.isFinite(n) && n > 0) {
+      return String(n).padStart(2, '0');
+    }
+  }
+  return trimmed;
+}
+
+function normalizeRegistrationCodeTwoDigits(regCode: string): string {
+  const m = /^0*(\d+)-(.+)$/.exec(regCode.trim());
+  if (!m) return regCode.trim();
+  const n = Number.parseInt(m[1], 10);
+  if (!Number.isFinite(n) || n <= 0) return regCode.trim();
+  return `${String(n).padStart(2, '0')}-${m[2]}`;
+}
+
+export function extractRegistrationSequence(regCode: string): number | null {
+  const m = /^(\d+)-/.exec(regCode.trim());
+  if (!m) return null;
+  const n = Number.parseInt(m[1], 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function generateRegistrationCode(
+  region: string,
+  role: RoleFilter,
+  existing: CmsRegistration2027[],
+): string {
+  const regionCode = getRegionShortCode(region);
+  const roleCode = role === 'uni' ? 'UNI' : 'UDA';
+  const regionKey = region.trim().toLowerCase();
+
+  const usedSeqs = new Set<number>();
+  const regionPairs = new Map<number, {hasUda: boolean; hasUni: boolean}>();
+  let highestPairIndex = -1;
+
+  for (const r of existing) {
+    const seq = extractRegistrationSequence(r.regCode);
+    if (!seq) continue;
+    usedSeqs.add(seq);
+    const pairIndex = Math.floor((seq - 1) / 2);
+    if (pairIndex > highestPairIndex) highestPairIndex = pairIndex;
+
+    if (r.region.trim().toLowerCase() === regionKey) {
+      const slot = regionPairs.get(pairIndex) ?? {hasUda: false, hasUni: false};
+      if (r.role === 'uda') slot.hasUda = true;
+      else slot.hasUni = true;
+      regionPairs.set(pairIndex, slot);
+    }
+  }
+
+  let chosenSeq = 0;
+  const sortedPairIndices = Array.from(regionPairs.keys()).sort((a, b) => a - b);
+  for (const pairIdx of sortedPairIndices) {
+    const candidateSeq = pairIdx * 2 + (role === 'uda' ? 1 : 2);
+    if (!usedSeqs.has(candidateSeq)) {
+      chosenSeq = candidateSeq;
+      break;
+    }
+  }
+
+  if (!chosenSeq) {
+    let nextPairIdx = highestPairIndex + 1;
+    while (true) {
+      const oddSeq = nextPairIdx * 2 + 1;
+      const evenSeq = nextPairIdx * 2 + 2;
+      if (!usedSeqs.has(oddSeq) && !usedSeqs.has(evenSeq)) {
+        chosenSeq = role === 'uda' ? oddSeq : evenSeq;
+        break;
+      }
+      nextPairIdx += 1;
+    }
+  }
+
+  const seqStr = String(chosenSeq).padStart(2, '0');
+  return `${seqStr}-${regionCode}-${roleCode}-2027`;
+}
+
+export interface SubmitRegistration2027Input {
+  role: RoleFilter;
+  region: string;
+  fullName: string;
+  shortName: string;
+  age: string;
+  phone: string;
+  email: string;
+  education: string;
+  profession: string;
+  advocacy: string;
+  achievementsText: string;
+  bio: string;
+  photoAdatRef: string;
+  photoKebesaranRef: string;
+  extraPhotos?: ExtraRegistrationPhoto[];
+  recLetterRef: string;
+  recLetterName: string;
+  recLetterMime: string;
+  recLetterSize: number;
+  recNumber: string;
+  recIssuer: string;
+  recDate: string;
+}
+
+export function submitRegistration2027(input: SubmitRegistration2027Input): CmsRegistration2027 {
+  const state = cloneJson(loadCmsState());
+  const now = new Date().toISOString();
+  const formattedFull = formatParticipantNameWithHonorific(
+    toTitleCaseWords(input.fullName),
+    input.role,
+    input.region.trim(),
+  );
+  const formattedShort = formatParticipantNameWithHonorific(
+    toTitleCaseWords(input.shortName || input.fullName),
+    input.role,
+    input.region.trim(),
+  );
+  const regCode = generateRegistrationCode(input.region, input.role, state.registrations2027);
+  const primaryPhoto = input.photoKebesaranRef || input.photoAdatRef;
+  const formattedAchievements = input.achievementsText
+    .split(/\r?\n/)
+    .map((line) => toTitleCaseWords(line))
+    .filter(Boolean)
+    .join('\n');
+
+  const entry: CmsRegistration2027 = {
+    id: `reg27-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    regCode,
+    createdAt: now,
+    updatedAt: now,
+    role: input.role,
+    region: input.region.trim(),
+    fullName: formattedFull,
+    shortName: formattedShort,
+    age: input.age.trim(),
+    phone: input.phone.trim(),
+    email: input.email.trim().toLowerCase(),
+    education: toTitleCaseWords(input.education),
+    profession: toTitleCaseWords(input.profession),
+    advocacy: toTitleCaseWords(input.advocacy),
+    achievementsText: formattedAchievements,
+    bio: toTitleCaseWords(input.bio),
+    photoRef: primaryPhoto,
+    photoAdatRef: input.photoAdatRef,
+    photoKebesaranRef: input.photoKebesaranRef,
+    extraPhotos: (input.extraPhotos ?? [])
+      .filter((p) => Boolean(p.ref))
+      .map((p) => ({label: toTitleCaseWords(p.label), ref: p.ref})),
+    recLetterRef: input.recLetterRef,
+    recLetterName: input.recLetterName,
+    recLetterMime: input.recLetterMime,
+    recLetterSize: input.recLetterSize,
+    recNumber: toTitleCaseWords(input.recNumber),
+    recIssuer: toTitleCaseWords(input.recIssuer),
+    recDate: input.recDate.trim(),
+    status: 'pending',
+    reviewerNote: 'Berkas telah diterima sistem lokal dan menunggu verifikasi panitia.',
+  };
+
+  state.registrations2027 = [entry, ...(state.registrations2027 || [])];
+  saveCmsState(state, {
+    operator: 'Calon Peserta (Portal Publik)',
+    module: 'Pendaftar 2027',
+    action: 'Pendaftaran Baru 2027',
+    summary: `${entry.fullName} (${entry.region}, ${entry.regCode}) mengirimkan biodata, ${2 + (entry.extraPhotos?.length ?? 0)} foto resmi, & surat rekomendasi.`,
+  });
+
+  return entry;
+}
+
+export function lookupRegistrationStatus(query: string): PublicRegistrationStatusView[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const state = loadCmsState();
+  const numericQuery = /^\d+$/.test(q) ? Number.parseInt(q, 10) : null;
+  const matches = (state.registrations2027 || []).filter((r) => {
+    const code = r.regCode.toLowerCase();
+    const full = r.fullName.toLowerCase();
+    const short = r.shortName.toLowerCase();
+    const region = r.region.toLowerCase();
+    const seq = extractRegistrationSequence(r.regCode);
+    const seqMatch = numericQuery !== null && seq === numericQuery;
+    const finMatch = r.finalistNumber ? r.finalistNumber.toLowerCase() === q : false;
+    return (
+      seqMatch ||
+      finMatch ||
+      code === q ||
+      code.includes(q) ||
+      full.includes(q) ||
+      short.includes(q) ||
+      region.includes(q)
+    );
+  });
+
+  matches.sort((a, b) => {
+    const sa = extractRegistrationSequence(a.regCode) ?? Number.MAX_SAFE_INTEGER;
+    const sb = extractRegistrationSequence(b.regCode) ?? Number.MAX_SAFE_INTEGER;
+    return sa - sb;
+  });
+
+  return matches.slice(0, 8).map((r) => {
+    const adat = r.photoAdatRef || r.photoRef;
+    const kebesaran = r.photoKebesaranRef || '';
+    const extraCount = (r.extraPhotos ?? []).filter((p) => Boolean(p.ref)).length;
+    const photoCount = (adat ? 1 : 0) + (kebesaran ? 1 : 0) + extraCount;
+    return {
+      regCode: r.regCode,
+      fullName: r.fullName,
+      role: r.role,
+      region: r.region,
+      createdAt: r.createdAt,
+      updatedAt: r.updatedAt,
+      status: r.status,
+      reviewerNote: r.reviewerNote,
+      finalistNumber: r.finalistNumber,
+      recNumber: r.recNumber,
+      recIssuer: r.recIssuer,
+      photoCount,
+      hasPhoto: Boolean(adat || kebesaran),
+      hasRecLetter: Boolean(r.recLetterRef),
+    };
+  });
+}
+
+export function reviewRegistration2027(
+  regId: string,
+  decision: {
+    status: RegistrationStatus;
+    reviewerNote: string;
+    finalistNumber?: string;
+    operatorName?: string;
+  },
+): {ok: true; registration: CmsRegistration2027; syncedSlot?: number} | {ok: false; error: string} {
+  const state = cloneJson(loadCmsState());
+  const reg = (state.registrations2027 || []).find((r) => r.id === regId);
+  if (!reg) {
+    return {ok: false, error: 'Data pendaftar tidak ditemukan.'};
+  }
+
+  const now = new Date().toISOString();
+  reg.status = decision.status;
+  reg.reviewerNote = decision.reviewerNote.trim();
+  reg.updatedAt = now;
+
+  const cleanFin = normalizeTwoDigitFinalistNumber(decision.finalistNumber ?? '');
+  if (cleanFin) reg.finalistNumber = cleanFin;
+  else delete reg.finalistNumber;
+
+  let syncedSlot: number | undefined;
+
+  if (decision.status === 'approved') {
+    let year2027 = state.catalogYears.find((y) => y.year === '2027');
+    if (!year2027) {
+      year2027 = createTemplateYearLineup('2027', 'draft');
+      state.catalogYears.unshift(year2027);
+      state.catalogYears.sort((a, b) => Number(b.year) - Number(a.year));
+    }
+
+    const list = reg.role === 'uda' ? year2027.uda : year2027.uni;
+    let slotIdx = list.findIndex((p) => p.sourceRegistrationId === reg.id);
+    if (slotIdx < 0) {
+      slotIdx = list.findIndex(
+        (p) => !p.sourceRegistrationId && p.region.toLowerCase() === reg.region.toLowerCase(),
+      );
+    }
+
+    const achievements = reg.achievementsText
+      .split(/\r?\n/)
+      .map((l) => l.trim())
+      .filter(Boolean);
+
+    const regSeq = extractRegistrationSequence(reg.regCode);
+    const resolvedFinalistNo = normalizeTwoDigitFinalistNumber(
+      reg.finalistNumber ||
+        (regSeq ? String(regSeq).padStart(2, '0') : String((slotIdx >= 0 ? slotIdx : list.length) + 1).padStart(2, '0')),
+    );
+    reg.finalistNumber = resolvedFinalistNo;
+
+    const thumbPhoto = reg.photoKebesaranRef || reg.photoAdatRef || reg.photoRef;
+    const fullPhoto = reg.photoAdatRef || reg.photoKebesaranRef || reg.photoRef;
+
+    const existing = slotIdx >= 0 ? list[slotIdx] : undefined;
+    const rankLabel = existing?.rankLabel || `Finalis ${reg.role === 'uda' ? 'Uda' : 'Uni'} 2027`;
+    const entry: AmbassadorBio = {
+      role: reg.role,
+      slotIndex: slotIdx >= 0 ? slotIdx : list.length,
+      sourceRegistrationId: reg.id,
+      rankLabel,
+      fullName: reg.fullName,
+      shortName: reg.shortName,
+      titleBadge: `Finalis No. ${resolvedFinalistNo} · ${rankLabel}`,
+      region: reg.region,
+      ...(reg.age ? {age: reg.age} : existing?.age ? {age: existing.age} : {}),
+      finalistNumber: resolvedFinalistNo,
+      education: reg.education || existing?.education || '',
+      profession:
+        reg.profession ||
+        existing?.profession ||
+        `Finalis ${reg.role === 'uda' ? 'Uda' : 'Uni'} Sumatera Barat 2027 · Utusan ${reg.region}`,
+      advocacy: reg.advocacy || existing?.advocacy || '',
+      achievement: achievements.length > 0 ? achievements.join(' · ') : existing?.achievement || '',
+      ...(achievements.length > 0
+        ? {achievements}
+        : existing?.achievements
+          ? {achievements: existing.achievements}
+          : {}),
+      bio:
+        reg.bio ||
+        existing?.bio ||
+        `Utusan resmi ${reg.region} berdasarkan Surat Rekomendasi ${reg.recIssuer} (${reg.recNumber}) pada Pemilihan Uda & Uni Duta Wisata Sumatera Barat 2027.`,
+      ...(thumbPhoto
+        ? {photo: {thumb: thumbPhoto, full: fullPhoto || thumbPhoto}}
+        : existing?.photo
+          ? {photo: existing.photo}
+          : {}),
+    };
+
+    if (slotIdx >= 0) {
+      list[slotIdx] = entry;
+    } else {
+      slotIdx = list.length;
+      list.push(entry);
+    }
+
+    if (reg.role === 'uda') year2027.uda = reindexCatalogList(list, 'uda');
+    else year2027.uni = reindexCatalogList(list, 'uni');
+
+    reg.assignedSlotIndex = slotIdx;
+    syncedSlot = slotIdx + 1;
+  } else {
+    const year2027 = state.catalogYears.find((y) => y.year === '2027');
+    if (year2027) {
+      const roleKey = reg.role;
+      const beforeLen = year2027[roleKey].length;
+      year2027[roleKey] = reindexCatalogList(
+        year2027[roleKey].filter((p) => p.sourceRegistrationId !== reg.id),
+        roleKey,
+      );
+      if (year2027[roleKey].length !== beforeLen) {
+        if (year2027.uda.length === 0 || year2027.uni.length === 0) {
+          year2027.status = 'draft';
+        }
+        for (const other of state.registrations2027 || []) {
+          if (other.role === roleKey && other.status === 'approved') {
+            const idx = year2027[roleKey].findIndex((p) => p.sourceRegistrationId === other.id);
+            if (idx >= 0) other.assignedSlotIndex = idx;
+            else delete other.assignedSlotIndex;
+          }
+        }
+      }
+    }
+    delete reg.assignedSlotIndex;
+  }
+
+  const actionLabel: Record<RegistrationStatus, string> = {
+    pending: 'Kembalikan ke Antrean',
+    revision: 'Minta Perbaikan Berkas',
+    approved: 'Sahkan ke Katalog 2027',
+    rejected: 'Tolak Pendaftaran',
+  };
+
+  saveCmsState(state, {
+    operator: decision.operatorName,
+    module: 'Pendaftar 2027',
+    action: actionLabel[decision.status],
+    summary: `${reg.regCode} · ${reg.fullName} (${reg.region}) — Status: ${decision.status.toUpperCase()}${syncedSlot ? ` · Masuk Katalog 2027 (#${syncedSlot})` : ''}.`,
+  });
+
+  return {ok: true, registration: reg, syncedSlot};
+}
+
+export function deleteRegistration2027(regId: string, operatorName?: string): boolean {
+  const state = cloneJson(loadCmsState());
+  const target = (state.registrations2027 || []).find((r) => r.id === regId);
+  if (!target) return false;
+  state.registrations2027 = (state.registrations2027 || []).filter((r) => r.id !== regId);
+
+  const year2027 = state.catalogYears.find((y) => y.year === '2027');
+  if (year2027) {
+    const roleKey = target.role;
+    const beforeLen = year2027[roleKey].length;
+    year2027[roleKey] = reindexCatalogList(
+      year2027[roleKey].filter((p) => p.sourceRegistrationId !== regId),
+      roleKey,
+    );
+    if (year2027[roleKey].length !== beforeLen) {
+      if (year2027.uda.length === 0 || year2027.uni.length === 0) {
+        year2027.status = 'draft';
+      }
+      for (const other of state.registrations2027) {
+        if (other.role === roleKey && other.status === 'approved') {
+          const idx = year2027[roleKey].findIndex((p) => p.sourceRegistrationId === other.id);
+          if (idx >= 0) other.assignedSlotIndex = idx;
+          else delete other.assignedSlotIndex;
+        }
+      }
+    }
+  }
+
+  saveCmsState(state, {
+    operator: operatorName,
+    module: 'Pendaftar 2027',
+    action: 'Hapus Berkas Pendaftar',
+    summary: `Menghapus berkas pendaftaran ${target.regCode} (${target.fullName}).`,
+  });
+  return true;
+}
+
+export function exportRegistrations2027Csv(): string {
+  const state = loadCmsState();
+  const escapeCsv = (val: string) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+  const headers = [
+    'KodeRegistrasi',
+    'WaktuDaftar',
+    'Status',
+    'NoFinalis',
+    'Kelompok',
+    'UtusanDaerah',
+    'NamaLengkap',
+    'Usia',
+    'WhatsApp',
+    'Email',
+    'Pendidikan',
+    'Profesi',
+    'FokusAdvokasi',
+    'NoSuratRekomendasi',
+    'InstansiPenerbit',
+    'TanggalSurat',
+    'FileSurat',
+    'CatatanPanitia',
+  ];
+  const rows = [headers.join(',')];
+  for (const r of state.registrations2027 || []) {
+    rows.push(
+      [
+        r.regCode,
+        r.createdAt,
+        r.status,
+        r.finalistNumber ?? '',
+        r.role === 'uda' ? 'Uda' : 'Uni',
+        r.region,
+        r.fullName,
+        r.age,
+        r.phone,
+        r.email,
+        r.education,
+        r.profession,
+        r.advocacy,
+        r.recNumber,
+        r.recIssuer,
+        r.recDate,
+        r.recLetterName,
+        r.reviewerNote,
+      ]
+        .map(escapeCsv)
+        .join(','),
+    );
+  }
+  return rows.join('\r\n');
 }
 
 /* ============================================================================
